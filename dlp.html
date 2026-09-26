@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DLP Policies in Power Platform</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  overflow: hidden;
+  color: white;
+  background:
+    radial-gradient(circle at top left, rgba(220,38,38,.85) 0%, transparent 35%),
+    radial-gradient(circle at top right, rgba(245,158,11,.85) 0%, transparent 35%),
+    radial-gradient(circle at bottom, rgba(236,72,153,.7) 0%, transparent 30%),
+    #0f0204;
+  animation: bgMove 12s ease infinite alternate;
+}
+
+@keyframes bgMove {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(-30deg); }
+}
+
+.slider {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  opacity: 0;
+  transform: scale(.95) translateY(25px);
+  transition: .8s ease;
+  pointer-events: none;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* Dynamic slide-specific colors */
+.slide[data-theme="red"] .card { border-color: rgba(239,68,68,.35); box-shadow: 0 30px 80px rgba(239,68,68,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="red"] .slide-number { color: #f87171; }
+.slide[data-theme="red"] h1 { background: linear-gradient(90deg, #ef4444, #f97316, #fbbf24, #ef4444); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="red"] .badge { background: rgba(239,68,68,.12); color: #fca5a5; border-color: rgba(239,68,68,.3); }
+.slide[data-theme="red"] .callout { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.35); border-left-color: #ef4444; color: #fecaca; }
+
+.slide[data-theme="orange"] .card { border-color: rgba(249,115,22,.35); box-shadow: 0 30px 80px rgba(249,115,22,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="orange"] .slide-number { color: #fb923c; }
+.slide[data-theme="orange"] h1 { background: linear-gradient(90deg, #f97316, #fbbf24, #facc15, #f97316); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="orange"] .badge { background: rgba(249,115,22,.12); color: #fdba74; border-color: rgba(249,115,22,.3); }
+.slide[data-theme="orange"] .callout { background: rgba(249,115,22,.12); border-color: rgba(249,115,22,.35); border-left-color: #f97316; color: #fed7aa; }
+
+.slide[data-theme="yellow"] .card { border-color: rgba(250,204,21,.35); box-shadow: 0 30px 80px rgba(250,204,21,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="yellow"] .slide-number { color: #facc15; }
+.slide[data-theme="yellow"] h1 { background: linear-gradient(90deg, #facc15, #84cc16, #22c55e, #facc15); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="yellow"] .badge { background: rgba(250,204,21,.12); color: #fde047; border-color: rgba(250,204,21,.3); }
+.slide[data-theme="yellow"] .callout { background: rgba(250,204,21,.12); border-color: rgba(250,204,21,.35); border-left-color: #facc15; color: #fef08a; }
+
+.slide[data-theme="green"] .card { border-color: rgba(34,197,94,.35); box-shadow: 0 30px 80px rgba(34,197,94,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="green"] .slide-number { color: #4ade80; }
+.slide[data-theme="green"] h1 { background: linear-gradient(90deg, #22c55e, #10b981, #06b6d4, #22c55e); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="green"] .badge { background: rgba(34,197,94,.12); color: #86efac; border-color: rgba(34,197,94,.3); }
+.slide[data-theme="green"] .callout { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); border-left-color: #22c55e; color: #bbf7d0; }
+
+.slide[data-theme="blue"] .card { border-color: rgba(59,130,246,.35); box-shadow: 0 30px 80px rgba(59,130,246,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="blue"] .slide-number { color: #60a5fa; }
+.slide[data-theme="blue"] h1 { background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="blue"] .badge { background: rgba(59,130,246,.12); color: #93c5fd; border-color: rgba(59,130,246,.3); }
+.slide[data-theme="blue"] .callout { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.35); border-left-color: #3b82f6; color: #bfdbfe; }
+
+.slide[data-theme="purple"] .card { border-color: rgba(139,92,246,.35); box-shadow: 0 30px 80px rgba(139,92,246,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="purple"] .slide-number { color: #a78bfa; }
+.slide[data-theme="purple"] h1 { background: linear-gradient(90deg, #8b5cf6, #ec4899, #f43f5e, #8b5cf6); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="purple"] .badge { background: rgba(139,92,246,.12); color: #c4b5fd; border-color: rgba(139,92,246,.3); }
+.slide[data-theme="purple"] .callout { background: rgba(139,92,246,.12); border-color: rgba(139,92,246,.35); border-left-color: #8b5cf6; color: #ddd6fe; }
+
+.slide[data-theme="pink"] .card { border-color: rgba(236,72,153,.35); box-shadow: 0 30px 80px rgba(236,72,153,.25), inset 0 1px 0 rgba(255,255,255,.15); }
+.slide[data-theme="pink"] .slide-number { color: #f472b6; }
+.slide[data-theme="pink"] h1 { background: linear-gradient(90deg, #ec4899, #f43f5e, #f97316, #ec4899); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.slide[data-theme="pink"] .badge { background: rgba(236,72,153,.12); color: #f9a8d4; border-color: rgba(236,72,153,.3); }
+.slide[data-theme="pink"] .callout { background: rgba(236,72,153,.12); border-color: rgba(236,72,153,.35); border-left-color: #ec4899; color: #fbcfe8; }
+
+.card {
+  width: 92%;
+  max-width: 1300px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 28px;
+  padding: 40px 45px;
+  transition: border-color .6s ease, box-shadow .6s ease;
+}
+
+.card::-webkit-scrollbar { width: 8px; }
+.card::-webkit-scrollbar-thumb { background: #facc15; border-radius: 50px; }
+
+.slide-number {
+  font-size: 14px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  transition: color .6s ease;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 3.2vw, 2.8rem);
+  line-height: 1.15;
+  margin-bottom: 20px;
+  background-size: 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientText 8s linear infinite;
+  transition: background .6s ease;
+}
+
+@keyframes gradientText {
+  0% { background-position: 0%; }
+  100% { background-position: 300%; }
+}
+
+p {
+  color: #d1d5db;
+  line-height: 1.75;
+  margin-bottom: 14px;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+}
+
+ul { padding-left: 22px; margin-top: 14px; }
+li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem); }
+
+.hero-architecture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 35px;
+}
+
+.node {
+  padding: 18px 25px;
+  border-radius: 18px;
+  font-weight: 600;
+  min-width: 210px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  font-size: clamp(0.95rem, 1.1vw, 1.1rem);
+}
+
+.node-red { background: linear-gradient(135deg,#dc2626,#ef4444); }
+.node-orange { background: linear-gradient(135deg,#ea580c,#f97316); }
+.node-yellow { background: linear-gradient(135deg,#ca8a04,#facc15); color:#1a1a1a; }
+.node-green { background: linear-gradient(135deg,#16a34a,#22c55e); }
+.node-blue { background: linear-gradient(135deg,#2563eb,#3b82f6); }
+.node-purple { background: linear-gradient(135deg,#7c3aed,#9333ea); }
+
+.connector-line {
+  width: 60px;
+  height: 4px;
+  background: #facc15;
+  border-radius: 50px;
+}
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  border: 1px solid;
+  transition: all .6s ease;
+}
+
+.callout {
+  border: 1px solid;
+  border-left: 5px solid;
+  border-radius: 16px;
+  padding: 18px 22px;
+  margin-top: 20px;
+  font-size: clamp(0.95rem, 1.15vw, 1.1rem);
+  line-height: 1.7;
+  transition: all .6s ease;
+}
+
+.example {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  padding: 18px 22px;
+  margin-top: 18px;
+  font-size: clamp(0.95rem, 1.15vw, 1.1rem);
+}
+
+.example strong { display: block; margin-bottom: 8px; color: #fde047; }
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.metric {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.metric strong { display: block; font-size: 2rem; color: #facc15; margin-bottom: 6px; }
+
+.small-note { font-size: 0.92rem; color: #cbd5e1; margin-top: 14px; }
+
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #dc2626, #f97316);
+  box-shadow: 0 10px 30px rgba(239,68,68,.35);
+  z-index: 999;
+  transition: transform .2s;
+}
+
+.nav:hover { transform: translateY(-50%) scale(1.08); }
+.prev { left: 20px; }
+.next { right: 20px; }
+
+.dots {
+  position: absolute;
+  bottom: 18px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.dot {
+  height: 13px;
+  width: 13px;
+  border-radius: 50%;
+  background: #475569;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.dot.active {
+  background: #facc15;
+  box-shadow: 0 0 15px #facc15;
+  transform: scale(1.2);
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,.08);
+  z-index: 1000;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 10%;
+  background: linear-gradient(90deg, #dc2626, #f97316, #facc15);
+  transition: .5s;
+}
+
+.draw-tools {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  gap: 10px;
+  z-index: 2000;
+}
+
+.draw-btn {
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(15,23,42,0.75);
+  color: white;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  font-family: 'Poppins', sans-serif;
+}
+
+.draw-btn:hover { background: rgba(30,41,59,0.95); }
+
+.slide-counter {
+  position: absolute;
+  bottom: 18px;
+  right: 30px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  z-index: 1000;
+}
+
+#annotationLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1500;
+}
+
+#annotationLayer.draw-active { pointer-events: auto; cursor: crosshair; }
+
+@media (max-width: 768px) {
+  .card { padding: 25px; }
+  .two-col { grid-template-columns: 1fr; }
+  .nav { width: 48px; height: 48px; font-size: 18px; }
+  .prev { left: 8px; } .next { right: 8px; }
+  .node { min-width: 160px; padding: 14px 18px; }
+  .connector-line { width: 30px; }
+}
+</style>
+</head>
+<body>
+
+<div class="draw-tools">
+  <button class="draw-btn" id="drawToggle">✏️ Pencil</button>
+  <button class="draw-btn" id="clearDraw">Clear</button>
+  <button class="draw-btn" id="fullscreenToggle">⛶ Full</button>
+</div>
+
+<div class="progress-bar"><div class="progress-fill"></div></div>
+
+<div class="slider">
+  <canvas id="annotationLayer"></canvas>
+
+  <!-- SLIDE 0: INTRO (RED) -->
+  <div class="slide active" data-theme="red">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">00</div>
+      <h1>DLP Policies in Power Platform</h1>
+      <div class="badge">Governance | Security | Compliance</div>
+      <p style="font-size:1.3rem; color:#fca5a5; margin-top:20px;">
+        The silent killer of your Power Automate flows.
+      </p>
+      <div class="callout" style="text-align:left; margin-top:30px;">
+        <strong>What you'll learn today:</strong>
+        <ul>
+          <li>What DLP actually means</li>
+          <li>Business vs Non-Business connectors</li>
+          <li>How DLP blocks your flows</li>
+          <li>Where to check policies</li>
+          <li>The fix — whitelist or workaround</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 1: WHAT IS DLP (ORANGE) -->
+  <div class="slide" data-theme="orange">
+    <div class="card">
+      <div class="slide-number">01</div>
+      <h1>What is DLP?</h1>
+      <p>
+        Data Loss Prevention. A governance rule that prevents sensitive data from moving between blocked connectors.
+      </p>
+      <div class="callout">
+        If SharePoint is Business and Twitter is Non-Business — you cannot use both in the same flow. DLP blocks it.
+      </div>
+      <div class="hero-architecture">
+        <div class="node node-red">Sensitive Data</div>
+        <div class="connector-line"></div>
+        <div class="node node-yellow">DLP Wall</div>
+        <div class="connector-line"></div>
+        <div class="node node-green">Safe Zone</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: CONNECTOR CLASSIFICATION (YELLOW) -->
+  <div class="slide" data-theme="yellow">
+    <div class="card">
+      <div class="slide-number">02</div>
+      <h1>Connector Classification</h1>
+      <div class="two-col">
+        <div>
+          <div class="badge">Business</div>
+          <p>Trusted connectors. SharePoint, Outlook, Teams, Dataverse.</p>
+        </div>
+        <div>
+          <div class="badge">Non-Business</div>
+          <p>External or risky. Twitter, Dropbox, personal Gmail.</p>
+        </div>
+      </div>
+      <div class="example">
+        <strong>Blocked</strong>
+        Connectors that cannot be used at all in your tenant.
+      </div>
+      <div class="callout">
+        You cannot mix Business and Non-Business in the same flow. That's the rule.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: HOW DLP BLOCKS YOUR FLOW (GREEN) -->
+  <div class="slide" data-theme="green">
+    <div class="card">
+      <div class="slide-number">03</div>
+      <h1>How DLP Blocks Your Flow</h1>
+      <p>Your flow works perfectly in Dev. Then it fails in Prod. No code change. Just a policy.</p>
+      <ul>
+        <li>The flow uses a Business connector</li>
+        <li>It also uses a Non-Business connector</li>
+        <li>DLP policy blocks the combination</li>
+        <li>Flow fails before the first action runs</li>
+      </ul>
+      <div class="callout">
+        This is not a bug. This is governance working exactly as designed.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: WHERE TO CHECK POLICIES (BLUE) -->
+  <div class="slide" data-theme="blue">
+    <div class="card">
+      <div class="slide-number">04</div>
+      <h1>Where to Check DLP Policies</h1>
+      <div class="example">
+        <strong>Power Platform Admin Center</strong>
+        <ol>
+          <li>Go to admin.powerplatform.microsoft.com</li>
+          <li>Click Policies → Data policies</li>
+          <li>Review connector classifications</li>
+          <li>Check environment-level policies</li>
+          <li>Check tenant-level policies</li>
+        </ol>
+      </div>
+      <div class="callout">
+        If you're not an admin, ask yours. Only admins can see and change DLP policies.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: THE FIX (PURPLE) -->
+  <div class="slide" data-theme="purple">
+    <div class="card">
+      <div class="slide-number">05</div>
+      <h1>The Fix</h1>
+      <ul>
+        <li><strong>Whitelist</strong> the connector with your admin</li>
+        <li>Move the connector to Business classification</li>
+        <li>Split the flow into two separate flows</li>
+        <li>Use HTTP with Azure AD as a workaround</li>
+        <li>Move to a different environment with less strict DLP</li>
+      </ul>
+      <div class="callout">
+        You cannot fix DLP in the flow itself. It's an admin-level decision.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: COMMON MISTAKES (PINK) -->
+  <div class="slide" data-theme="pink">
+    <div class="card">
+      <div class="slide-number">06</div>
+      <h1>Common Mistakes</h1>
+      <ul>
+        <li>Building flows without checking DLP first</li>
+        <li>Using personal connectors for production flows</li>
+        <li>Assuming DLP is the same across all environments</li>
+        <li>Not documenting which connectors are blocked</li>
+        <li>Ignoring DLP warnings during flow creation</li>
+      </ul>
+      <div class="callout">
+        Test your DLP policies in Dev before you build anything for production.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: BEST PRACTICES (RED) -->
+  <div class="slide" data-theme="red">
+    <div class="card">
+      <div class="slide-number">07</div>
+      <h1>Best Practices</h1>
+      <ul>
+        <li>Review DLP policies before every project</li>
+        <li>Keep a list of approved connectors</li>
+        <li>Use environment groups for policy inheritance</li>
+        <li>Align DLP with your security team</li>
+        <li>Log and monitor DLP blocks</li>
+      </ul>
+      <div class="callout">
+        DLP is not a blocker. It's a guardrail. Work with it, not against it.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: SUMMARY (ORANGE) -->
+  <div class="slide" data-theme="orange">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">08</div>
+      <h1>Summary</h1>
+      <div class="hero-architecture" style="margin-top:40px;">
+        <div class="node node-red">Business</div>
+        <div class="node node-yellow">Blocked Combo</div>
+        <div class="node node-green">Safe Flow</div>
+      </div>
+      <div class="callout" style="text-align:left; margin-top:40px;">
+        DLP policies control what your flows can and cannot do. Understand them. Check them. Work with your admin. Then build.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: OUTRO (YELLOW) -->
+  <div class="slide" data-theme="yellow">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">09</div>
+      <h1>Thanks for Watching</h1>
+      <p style="font-size:1.3rem; margin-top:20px;">
+        New Power Automate content every day.
+      </p>
+      <div class="callout" style="text-align:left; margin-top:30px;">
+        <strong>Next up:</strong> Solutions in Power Automate — why your flows need a container.
+        <br><br>
+        <strong>Subscribe</strong> for daily tips, tutorials, and real-world walkthroughs.
+      </div>
+    </div>
+  </div>
+
+  <button class="nav prev" aria-label="Previous slide">❮</button>
+  <button class="nav next" aria-label="Next slide">❯</button>
+  <div class="dots"></div>
+  <div class="slide-counter"><span id="currentSlide">1</span> / <span id="totalSlides">10</span></div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsContainer = document.querySelector('.dots');
+const progressFill = document.querySelector('.progress-fill');
+const annotationLayer = document.getElementById('annotationLayer');
+const drawToggle = document.getElementById('drawToggle');
+const clearDraw = document.getElementById('clearDraw');
+const fullscreenToggle = document.getElementById('fullscreenToggle');
+const currentSlideEl = document.getElementById('currentSlide');
+const totalSlidesEl = document.getElementById('totalSlides');
+const ctx = annotationLayer.getContext('2d');
+
+let current = 0;
+let isDrawing = false;
+let isDrawMode = false;
+let lastX = 0;
+let lastY = 0;
+
+totalSlidesEl.textContent = slides.length;
+
+function resizeCanvas() {
+  const sliderRect = document.querySelector('.slider').getBoundingClientRect();
+  annotationLayer.width = sliderRect.width;
+  annotationLayer.height = sliderRect.height;
+}
+
+function startDraw(event) {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  const rect = annotationLayer.getBoundingClientRect();
+  lastX = event.clientX - rect.left;
+  lastY = event.clientY - rect.top;
+}
+
+function draw(event) {
+  if (!isDrawing || !isDrawMode) return;
+  const rect = annotationLayer.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+
+  lastX = x;
+  lastY = y;
+}
+
+function stopDraw() { isDrawing = false; }
+
+function toggleDrawMode() {
+  isDrawMode = !isDrawMode;
+  annotationLayer.classList.toggle('draw-active', isDrawMode);
+  drawToggle.textContent = isDrawMode ? '✏️ On' : '✏️ Pencil';
+  drawToggle.style.background = isDrawMode ? 'rgba(250,204,21,0.18)' : 'rgba(15,23,42,0.75)';
+}
+
+function clearAnnotations() {
+  ctx.clearRect(0, 0, annotationLayer.width, annotationLayer.height);
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+window.addEventListener('resize', resizeCanvas);
+annotationLayer.addEventListener('pointerdown', startDraw);
+annotationLayer.addEventListener('pointermove', draw);
+annotationLayer.addEventListener('pointerup', stopDraw);
+annotationLayer.addEventListener('pointerleave', stopDraw);
+annotationLayer.addEventListener('pointercancel', stopDraw);
+drawToggle.addEventListener('click', toggleDrawMode);
+clearDraw.addEventListener('click', clearAnnotations);
+fullscreenToggle.addEventListener('click', toggleFullscreen);
+resizeCanvas();
+
+slides.forEach((_, index) => {
+  const dot = document.createElement('div');
+  dot.classList.add('dot');
+  if (index === 0) dot.classList.add('active');
+  dot.addEventListener('click', () => showSlide(index));
+  dotsContainer.appendChild(dot);
+});
+
+const dots = document.querySelectorAll('.dot');
+
+function updateProgress() {
+  const progress = ((current + 1) / slides.length) * 100;
+  progressFill.style.width = `${progress}%`;
+  currentSlideEl.textContent = current + 1;
+}
+
+function showSlide(index) {
+  slides[current].classList.remove('active');
+  dots[current].classList.remove('active');
+
+  current = (index + slides.length) % slides.length;
+
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+  updateProgress();
+
+  clearAnnotations();
+}
+
+document.querySelector('.next').addEventListener('click', () => showSlide(current + 1));
+document.querySelector('.prev').addEventListener('click', () => showSlide(current - 1));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') showSlide(current + 1);
+  if (e.key === 'ArrowLeft') showSlide(current - 1);
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+updateProgress();
+</script>
+</body>
+</html>
