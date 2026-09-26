@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connection References - Interactive Slider</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body{
+    background: linear-gradient(135deg,#0f172a,#020617);
+    color:#fff;
+    overflow:hidden;
+}
+
+.slider{
+    position:relative;
+    width:100vw;
+    height:100vh;
+}
+
+.slide{
+    position:absolute;
+    width:100%;
+    height:100%;
+    padding:60px;
+    opacity:0;
+    transform:translateX(100%);
+    transition:all .7s ease;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.slide.active{
+    opacity:1;
+    transform:translateX(0);
+}
+
+.card{
+    width:85%;
+    max-width:1200px;
+    background:rgba(255,255,255,0.08);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:30px;
+    padding:45px;
+    box-shadow:0 0 50px rgba(0,0,0,.5);
+}
+
+.slide-number{
+    color:#00e5ff;
+    font-size:14px;
+    letter-spacing:2px;
+    margin-bottom:10px;
+}
+
+h1{
+    font-size:3rem;
+    margin-bottom:20px;
+    background:linear-gradient(90deg,#00e5ff,#8b5cf6,#ff4ecd);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+p{
+    font-size:1.15rem;
+    line-height:1.8;
+    color:#d1d5db;
+}
+
+ul{
+    margin-top:20px;
+    padding-left:25px;
+}
+
+li{
+    margin:10px 0;
+    line-height:1.7;
+}
+
+.nav{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:60px;
+    height:60px;
+    border:none;
+    border-radius:50%;
+    background:#1e293b;
+    color:white;
+    cursor:pointer;
+    font-size:24px;
+    z-index:100;
+}
+
+.prev{left:20px;}
+.next{right:20px;}
+
+.nav:hover{
+    background:#00c3ff;
+}
+
+.dots{
+    position:absolute;
+    bottom:25px;
+    width:100%;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+}
+
+.dot{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:#475569;
+    cursor:pointer;
+}
+
+.dot.active{
+    background:#00e5ff;
+    box-shadow:0 0 10px #00e5ff;
+}
+
+.highlight{
+    color:#00e5ff;
+    font-weight:bold;
+}
+
+.diagram{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+    margin-top:30px;
+    flex-wrap:wrap;
+}
+
+.box{
+    padding:15px 25px;
+    border-radius:15px;
+    background:linear-gradient(135deg,#2563eb,#7c3aed);
+    font-weight:bold;
+}
+
+.arrow{
+    font-size:30px;
+    color:#00e5ff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="slider">
+
+<!-- Slide 1 -->
+<div class="slide active">
+<div class="card">
+<div class="slide-number">SLIDE 01</div>
+<h1>Connection References Overview</h1>
+<p>
+A Connection Reference is a solution-aware component in Microsoft Power Platform.
+It acts as an abstraction layer between apps, flows, and the actual connector
+authentication used to access services such as Outlook, SharePoint, Dataverse,
+SQL, SAP, and Teams.
+</p>
+<div class="diagram">
+<div class="box">Power App</div>
+<div class="arrow">→</div>
+<div class="box">Connection Reference</div>
+<div class="arrow">→</div>
+<div class="box">Actual Connection</div>
+</div>
+</div>
+</div>
+
+<!-- Slide 2 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 02</div>
+<h1>Why Connection References Matter</h1>
+<ul>
+<li>Eliminate hardcoded connector dependencies.</li>
+<li>Allow seamless deployment across environments.</li>
+<li>Reduce maintenance effort for administrators.</li>
+<li>Support governance and ALM best practices.</li>
+<li>Improve portability of Power Apps and Flows.</li>
+</ul>
+</div>
+</div>
+
+<!-- Slide 3 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 03</div>
+<h1>Core Architecture</h1>
+<p>
+Connection References sit between a solution component and an actual connector
+connection. Applications use the reference, while administrators can change
+the underlying authentication without modifying flows or apps.
+</p>
+
+<div class="diagram">
+<div class="box">Flow</div>
+<div class="arrow">→</div>
+<div class="box">Reference</div>
+<div class="arrow">→</div>
+<div class="box">Connector</div>
+<div class="arrow">→</div>
+<div class="box">External System</div>
+</div>
+</div>
+</div>
+
+<!-- Slide 4 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 04</div>
+<h1>How Deployment Works</h1>
+<ul>
+<li>Developer creates Flow in Development.</li>
+<li>Connection Reference is added to Solution.</li>
+<li>Solution is exported.</li>
+<li>Imported into Test or Production.</li>
+<li>Admin maps the reference to an appropriate connection.</li>
+<li>Flow works without redesign.</li>
+</ul>
+</div>
+</div>
+
+<!-- Slide 5 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 05</div>
+<h1>Environment Migration</h1>
+<p>
+Without Connection References, flows often break when moved between
+Development, QA, UAT, and Production. References provide environment-specific
+connection mapping while keeping the solution package unchanged.
+</p>
+</div>
+</div>
+
+<!-- Slide 6 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 06</div>
+<h1>Relationship with Connectors</h1>
+
+<ul>
+<li><span class="highlight">Connector</span> = Service interface.</li>
+<li><span class="highlight">Connection</span> = Authenticated account.</li>
+<li><span class="highlight">Connection Reference</span> = Logical pointer.</li>
+<li>One reference can be reassigned to different connections.</li>
+</ul>
+
+<div class="diagram">
+<div class="box">SharePoint Connector</div>
+<div class="arrow">↓</div>
+<div class="box">Reference</div>
+<div class="arrow">↓</div>
+<div class="box">Service Account Connection</div>
+</div>
+
+</div>
+</div>
+
+<!-- Slide 7 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 07</div>
+<h1>Benefits for ALM</h1>
+<ul>
+<li>Supports DevOps pipelines.</li>
+<li>Accelerates CI/CD deployments.</li>
+<li>Reduces deployment failures.</li>
+<li>Promotes reusable solution components.</li>
+<li>Improves enterprise governance.</li>
+</ul>
+</div>
+</div>
+
+<!-- Slide 8 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 08</div>
+<h1>Security Considerations</h1>
+<p>
+Administrators should use dedicated service accounts where appropriate.
+Connection References help separate application logic from credentials,
+reducing the risk of exposing personal user accounts in production systems.
+</p>
+</div>
+</div>
+
+<!-- Slide 9 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 09</div>
+<h1>Best Practices</h1>
+
+<ul>
+<li>Use meaningful naming conventions.</li>
+<li>Store flows inside solutions.</li>
+<li>Avoid personal accounts for production.</li>
+<li>Validate references after deployment.</li>
+<li>Document ownership and credentials.</li>
+<li>Review permissions regularly.</li>
+</ul>
+
+</div>
+</div>
+
+<!-- Slide 10 -->
+<div class="slide">
+<div class="card">
+<div class="slide-number">SLIDE 10</div>
+<h1>Summary</h1>
+
+<p>
+Connection References are a foundational Power Platform capability that
+separates applications from authentication details. They simplify environment
+migration, strengthen governance, support ALM processes, and create scalable,
+enterprise-grade solutions.
+</p>
+
+<div class="diagram">
+<div class="box">Reusable</div>
+<div class="box">Secure</div>
+<div class="box">Portable</div>
+<div class="box">Governed</div>
+</div>
+
+</div>
+</div>
+
+<button class="nav prev">❮</button>
+<button class="nav next">❯</button>
+
+<div class="dots"></div>
+
+</div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+const dotsContainer=document.querySelector('.dots');
+let current=0;
+
+slides.forEach((_,i)=>{
+    const dot=document.createElement('div');
+    dot.classList.add('dot');
+    if(i===0) dot.classList.add('active');
+    dot.addEventListener('click',()=>showSlide(i));
+    dotsContainer.appendChild(dot);
+});
+
+const dots=document.querySelectorAll('.dot');
+
+function showSlide(index){
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+
+    current=(index+slides.length)%slides.length;
+
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+}
+
+document.querySelector('.next').onclick=()=>showSlide(current+1);
+document.querySelector('.prev').onclick=()=>showSlide(current-1);
+
+document.addEventListener('keydown',(e)=>{
+    if(e.key==="ArrowRight") showSlide(current+1);
+    if(e.key==="ArrowLeft") showSlide(current-1);
+});
+</script>
+
+</body>
+</html>
