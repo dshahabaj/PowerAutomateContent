@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filter Array — Power Automate, from zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+
+:root {
+  --bg: #0a0511;
+  --card: #17111f;
+  --card-2: #1e1729;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+  --accent: #ec4899;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+}
+
+body {
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding-top: 20px;
+  padding-bottom: 16px;
+
+  padding-left: clamp(30px, 4vw, 80px);
+  padding-right: clamp(30px, 4vw, 80px);
+
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar .icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f0abfc, #fbbf24);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.topbar .title { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.topbar .subtitle { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.topbar .actions { display: flex; gap: 14px; color: var(--text-dim); font-size: 20px; }
+
+.progress-track {
+  height: 3px;
+
+  margin-left: clamp(30px, 4vw, 80px);
+  margin-right: clamp(30px, 4vw, 80px);
+
+  background: rgba(255,255,255,.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-track .fill {
+  height: 100%;
+  width: 10%;
+  background: linear-gradient(90deg, var(--accent), #fbbf24);
+  transition: width .4s ease;
+}
+
+.slides {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  width: 100%;
+  max-width: 1400px;
+
+  margin: 0 auto;
+
+  padding-top: 40px;
+  padding-bottom: 40px;
+
+  /* More breathing room */
+  padding-left: clamp(40px, 8vw, 140px);
+  padding-right: clamp(40px, 8vw, 140px);
+}
+
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #4a3a55; border-radius: 6px; }
+
+.slide { display: none; animation: fadeUp .4s ease; }
+.slide.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+h2 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+
+p { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin-bottom: 14px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.card.tint { background: var(--card-2); }
+.card-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.recap-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 20px; }
+.recap-item .check { color: var(--green); font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+.recap-item .body { flex: 1; }
+.recap-item .body strong { font-weight: 700; }
+
+.pill {
+  display: inline-block;
+  background: rgba(255,255,255,.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--accent-2);
+  margin: 0 2px;
+}
+
+.accordion {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .2s;
+}
+.accordion:hover { background: var(--card-2); }
+.accordion-header {
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+.accordion-header .arrow { color: var(--text-dim); transition: transform .3s ease; font-size: 14px; }
+.accordion.open .accordion-header .arrow { transform: rotate(180deg); }
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease, padding .3s ease;
+  padding: 0 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.accordion.open .accordion-body { max-height: 300px; padding: 0 20px 20px; }
+
+.anatomy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-2);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: border-color .3s;
+  cursor: pointer;
+}
+.anatomy-row.active { border-color: var(--accent); }
+.anatomy-row .left { font-size: 14px; }
+.anatomy-row .dot {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+.anatomy-detail {
+  background: var(--card-2);
+  border-radius: 14px;
+  padding: 16px 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+.flow-mock { background: var(--card-2); border-radius: 16px; padding: 20px; margin: 16px 0; }
+.flow-action {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent-2);
+}
+.flow-action.pink { border-left-color: var(--accent); }
+.flow-action.green { border-left-color: var(--green); }
+.flow-action .icon { font-size: 20px; }
+.flow-action .name { font-weight: 600; font-size: 14px; }
+.flow-action .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.flow-loop {
+  border: 2px dashed var(--green);
+  border-radius: 16px;
+  padding: 14px;
+  margin-top: 8px;
+  background: rgba(74,222,128,.05);
+}
+.flow-loop .label { font-size: 12px; color: var(--green); font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; }
+
+.tryit { background: var(--card); border-radius: 20px; padding: 22px; }
+.tryit select, .tryit input {
+  width: 100%;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .15s;
+  width: 100%;
+}
+.btn:hover { transform: scale(1.02); }
+
+.result-table { margin-top: 16px; font-size: 14px; }
+.result-table .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.result-table .row:last-child { border-bottom: none; }
+.result-table .row.hit { color: var(--green); font-weight: 600; }
+.result-table .row.miss { color: #52525b; }
+
+.quiz-q { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+.quiz-q .question { font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+.quiz-option {
+  background: var(--card-2);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.quiz-option:hover { border-color: rgba(255,255,255,.15); }
+.quiz-option.correct { background: rgba(74,222,128,.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; opacity: .6; }
+.slide {
+  display: none;
+  animation: fadeUp .4s ease;
+
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
+  gap: 20px;
+}
+.flip-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 180px;
+  cursor: pointer;
+  position: relative;
+  transition: all .3s;
+  border: 1px solid var(--border);
+}
+.flip-card .front, .flip-card .back { transition: opacity .3s; }
+.flip-card .back { display: none; opacity: 0; }
+.flip-card.flipped .front { display: none; }
+.flip-card.flipped .back { display: block; opacity: 1; }
+.flip-card .card-label { color: var(--accent-2); }
+.flip-card.flipped .card-label { color: var(--accent); }
+.flip-card h4 { font-size: 17px; margin-bottom: 10px; }
+.flip-card p { font-size: 13px; margin-bottom: 0; }
+.flip-hint { position: absolute; bottom: 12px; right: 16px; font-size: 11px; color: var(--text-dim); }
+
+.takeaway {
+  background: linear-gradient(135deg, rgba(74,222,128,.12), rgba(34,211,238,.08));
+  border-left: 4px solid var(--green);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d1fae5;
+}
+.takeaway strong { color: white; font-weight: 700; }
+
+/* ---------- BOTTOM NAV WITH ACTIONS ---------- */
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 22px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 10px;
+  background: var(--bg);
+}
+
+.nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.nav-btn:hover { background: var(--card-2); }
+.nav-btn:active { transform: scale(.94); }
+.nav-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+.nav-btn.primary:hover { background: #db2777; }
+.nav-btn.active-tool {
+  background: rgba(251,191,36,.18);
+  border-color: rgba(251,191,36,.5);
+  color: #fbbf24;
+}
+
+.nav-center {
+  min-width: 180px;
+  text-align: center;
+}
+.nav-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.nav-dots { display: flex; gap: 5px; }
+.nav-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #3f344d;
+  cursor: pointer;
+  transition: all .3s;
+}
+.nav-dot.active { background: var(--accent); width: 18px; border-radius: 4px; }
+@media (min-width: 1440px) {
+
+  .slide {
+    max-width: 1200px;
+  }
+
+  h2 {
+    font-size: 52px;
+  }
+
+  p {
+    font-size: 18px;
+    line-height: 1.8;
+  }
+
+  .card,
+  .tryit,
+  .flow-mock {
+    padding: 30px;
+  }
+}
+@media (min-width: 1024px) {
+
+  h2 {
+    font-size: 42px;
+  }
+
+  p {
+    font-size: 18px;
+  }
+
+  .card {
+    padding: 28px;
+  }
+
+  .takeaway {
+    font-size: 16px;
+  }
+
+  .flow-mock {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  h2 { font-size: 22px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .app { max-width: 100%; }
+  .nav-btn { width: 40px; height: 40px; font-size: 16px; }
+  .nav-label { font-size: 10px; }
+}
+
+#annotationLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+#annotationLayer.draw-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 12px 18px;
+
+  background: rgba(23, 17, 31, 0.95);
+  backdrop-filter: blur(12px);
+
+  border: 1px solid var(--border);
+  border-radius: 20px;
+
+  width: auto;
+  z-index: 1000;
+  max-width: 700px;
+}
+</style>
+</head>
+<body>
+
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex; align-items:center;">
+      <div class="icon">🔎</div>
+      <div>
+        <div class="title">Power Automate, from zero</div>
+        <div class="subtitle">Lesson: Filter Array</div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="progress-track"><div class="fill" id="progressFill"></div></div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- 01 -->
+    <div class="slide active">
+      <div class="step-label">01 — What you'll learn</div>
+      <h2>Filter Array in Power Automate</h2>
+      <p>Filter Array keeps only the items that pass a rule — in one action, with no loop.</p>
+      <div class="card tint">
+        <div class="card-label">By the end</div>
+        <p style="margin-bottom:0;">You'll know what Filter Array does, when to use it, how it compares to Select, and how to fix the mistakes most beginners make.</p>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div class="slide">
+      <div class="step-label">02 — What it is</div>
+      <h2>From array and a condition</h2>
+      <p>Filter Array needs two things: an array of items, and a rule that decides which ones stay.</p>
+      <div class="card">
+        <div class="card-label">Input</div>
+        <p style="margin-bottom:8px;">Array of items</p>
+        <div class="card-label" style="color:var(--accent-2);">Rule</div>
+        <p style="margin-bottom:0;">Condition (e.g., amount is greater than 100)</p>
+      </div>
+      <div class="takeaway">
+        <strong>💡 Takeaway:</strong> The output is always an array. Use <span class="pill">length()</span> to count the matches.
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div class="slide">
+      <div class="step-label">03 — Look inside one</div>
+      <h2>The anatomy of Filter Array</h2>
+      <p>Tap a numbered dot to see what each part does.</p>
+
+      <div class="anatomy-row" data-anatomy="1">
+        <div class="left">📥 From: <span class="pill">outputs('Get_orders')</span></div>
+        <div class="dot">1</div>
+      </div>
+      <div class="anatomy-row" data-anatomy="2">
+        <div class="left">🎯 Rule: <span class="pill">item()?['amount'] > 100</span></div>
+        <div class="dot">2</div>
+      </div>
+      <div class="anatomy-row" data-anatomy="3">
+        <div class="left">📤 Output: <span class="pill">body('Filter_array')</span></div>
+        <div class="dot">3</div>
+      </div>
+      <div class="anatomy-row" data-anatomy="4">
+        <div class="left">🔢 Count: <span class="pill">length(body('Filter_array'))</span></div>
+        <div class="dot">4</div>
+      </div>
+
+      <div class="anatomy-detail" id="anatomyDetail">
+        Select a numbered dot above to see what that part does.
+      </div>
+
+      <div class="takeaway">
+        <strong>💡 Takeaway:</strong> The output is a shorter array with the same item shape.
+      </div>
+    </div>
+
+    <!-- 04 -->
+    <div class="slide">
+      <div class="step-label">04 — See it in the designer</div>
+      <h2>What this looks like as a real flow</h2>
+      <p>Here's a simplified illustration of Filter Array trimming a list before a loop.</p>
+
+      <div class="flow-mock">
+        <div class="flow-action">
+          <div class="icon">📋</div>
+          <div>
+            <div class="name">Get items</div>
+            <div class="meta">SharePoint — Orders</div>
+          </div>
+        </div>
+        <div class="flow-action pink">
+          <div class="icon">🔎</div>
+          <div>
+            <div class="name">Filter array</div>
+            <div class="meta">Amount is greater than 100</div>
+          </div>
+        </div>
+        <div class="flow-loop">
+          <div class="label">▶ Apply to each — Filter array output</div>
+          <div class="flow-action green">
+            <div class="icon">✉️</div>
+            <div>
+              <div class="name">Send an email (V2)</div>
+              <div class="meta">Only for big orders</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="takeaway">
+        <strong>💡 Takeaway:</strong> Filter first, then loop. The loop only runs for items that matter.
+      </div>
+    </div>
+
+    <!-- 05 -->
+    <div class="slide">
+      <div class="step-label">05 — Where it shines</div>
+      <h2>Four everyday use cases</h2>
+
+      <div class="card">
+        <div class="card-label" style="color:var(--green);">✅ Keep only active records</div>
+        <p style="margin-bottom:0;">Drop closed or archived items before doing anything else.</p>
+      </div>
+      <div class="card">
+        <div class="card-label" style="color:var(--yellow);">💰 Find items over a limit</div>
+        <p style="margin-bottom:0;">Pick out orders above an amount, or tasks past a due date.</p>
+      </div>
+      <div class="card">
+        <div class="card-label" style="color:var(--accent-2);">🔍 Check if something exists</div>
+        <p style="margin-bottom:0;">Filter, then test whether the count is greater than zero.</p>
+      </div>
+      <div class="card">
+        <div class="card-label" style="color:var(--green);">⚡ Save loop runs</div>
+        <p style="margin-bottom:0;">Trim the list first, so Apply to Each does less work.</p>
+      </div>
+
+      <div class="takeaway">
+        <strong>💡 Takeaway:</strong> Any time you say "only the ones where…", that's Filter Array.
+      </div>
+    </div>
+
+    <!-- 06 -->
+    <div class="slide">
+      <div class="step-label">06 — Quick comparison</div>
+      <h2>Select vs. Filter Array</h2>
+
+      <div class="compare-grid">
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front">
+            <div class="card-label">Changes the shape</div>
+            <p>Every item stays. Each one gets a new shape.</p>
+          </div>
+          <div class="back">
+            <div class="card-label" style="color:var(--accent-2);">Select</div>
+            <h4>Reshapes</h4>
+            <p>Count stays the same. Fields change.</p>
+          </div>
+          <div class="flip-hint">Tap to flip →</div>
+        </div>
+
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front">
+            <div class="card-label" style="color:var(--accent-2);">🔎 Filter Array</div>
+            <p>Tap to flip</p>
+          </div>
+          <div class="back">
+            <div class="card-label" style="color:var(--accent);">Filter Array</div>
+            <h4>Removes</h4>
+            <p>Only matching items stay. Count gets shorter.</p>
+          </div>
+          <div class="flip-hint">Tap to flip →</div>
+        </div>
+      </div>
+
+      <div class="takeaway">
+        <strong>💡 Takeaway:</strong> Select reshapes. Filter Array removes. Use both together for a clean list.
+      </div>
+    </div>
+
+    <!-- 07 -->
+    <div class="slide">
+      <div class="step-label">07 — Try it yourself</div>
+      <h2>Filter some orders</h2>
+      <p>Pick a minimum amount. Then run Filter Array on this list of 6 orders.</p>
+
+      <div class="tryit">
+        <label style="font-size:13px; color:var(--text-dim);">Keep orders where amount is greater than</label>
+        <select id="minAmount">
+          <option value="50">$50</option>
+          <option value="100" selected>$100</option>
+          <option value="200">$200</option>
+          <option value="300">$300</option>
+        </select>
+        <button class="btn" onclick="runFilter()">▶ Run Filter Array</button>
+
+        <div class="result-table" id="resultTable">
+          <div class="row"><span>A-101</span><span>$40</span></div>
+          <div class="row"><span>A-102</span><span>$250</span></div>
+          <div class="row"><span>A-103</span><span>$90</span></div>
+          <div class="row"><span>A-104</span><span>$310</span></div>
+          <div class="row"><span>A-105</span><span>$130</span></div>
+          <div class="row"><span>A-106</span><span>$60</span></div>
+        </div>
+        <p id="resultMsg" style="margin-top:14px; font-size:13px; color:var(--text-dim);">Press "Run Filter Array" to see which orders stay.</p>
+      </div>
+    </div>
+
+    <!-- 08 -->
+    <div class="slide">
+      <div class="step-label">08 — Learn from others' mistakes</div>
+      <h2>Common pitfalls</h2>
+      <p>Tap a mistake to see why it trips beginners up.</p>
+
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Comparing text to a number</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">If Amount is stored as text, a "greater than 100" check can give odd results. Make sure the field is really a number first.</div>
+      </div>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Text matches are case-sensitive</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">"Approved" and "approved" are not the same. Use <span class="pill">toLower()</span> on both sides before comparing.</div>
+      </div>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Forgetting the output is always an array</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">Even if only one item matches, the output is still an array. Wrap it in <span class="pill">first()</span> if you need a single item.</div>
+      </div>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Filtering after the loop instead of before</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">If you filter inside an Apply to Each, you still loop through every item. Always filter BEFORE the loop.</div>
+      </div>
+    </div>
+
+    <!-- 09 -->
+    <div class="slide">
+      <div class="step-label">09 — Quick check</div>
+      <h2>Does it stick?</h2>
+      <p>Three quick questions. Pick an answer to see if you're right.</p>
+
+      <div class="quiz-q">
+        <div class="question">1. What does Filter Array change?</div>
+        <div class="quiz-option" onclick="answer(this, false)">The shape of every item</div>
+        <div class="quiz-option" onclick="answer(this, true)">How many items are in the array</div>
+        <div class="quiz-option" onclick="answer(this, false)">The order of the fields</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">2. Nothing matches your rule. What does Filter Array return?</div>
+        <div class="quiz-option" onclick="answer(this, false)">An error</div>
+        <div class="quiz-option" onclick="answer(this, true)">An empty array</div>
+        <div class="quiz-option" onclick="answer(this, false)">The original array</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">3. When should you filter?</div>
+        <div class="quiz-option" onclick="answer(this, false)">After the loop</div>
+        <div class="quiz-option" onclick="answer(this, true)">Before the loop</div>
+        <div class="quiz-option" onclick="answer(this, false)">Inside the loop</div>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="slide">
+      <div class="step-label">Recap</div>
+      <h2>What you now know</h2>
+
+      <div class="card tint">
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body"><strong>Filter Array</strong> keeps only the items that pass a rule, in one action, with no loop.</div>
+        </div>
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body">It needs a <strong>From</strong> array and a <strong>Condition</strong>. Use <span class="pill">item()</span> for conditions.</div>
+        </div>
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body">The output is always an array. Use <span class="pill">length()</span> to count the matches.</div>
+        </div>
+        <div class="recap-item" style="margin-bottom:0;">
+          <div class="check">✔</div>
+          <div class="body"><strong>Select</strong> reshapes items. <strong>Filter Array</strong> removes items. Filter before you loop.</div>
+        </div>
+      </div>
+
+      <div class="takeaway" style="margin-top:24px;">
+        <strong>Built as a self-contained lesson</strong> — no account or setup needed.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ---------- BOTTOM NAV ---------- -->
+  <div class="bottom-nav">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous">←</button>
+
+    <button class="nav-btn" id="clearBtn" aria-label="Clear drawing" title="Clear">🧹</button>
+
+    <button class="nav-btn" id="pencilBtn" aria-label="Toggle pencil" title="Pencil">✏️</button>
+
+    <div class="nav-center">
+      <div class="nav-label" id="navLabel">Intro</div>
+      <div class="nav-dots" id="navDots"></div>
+    </div>
+
+    <button class="nav-btn" id="fullscreenBtn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+
+    <button class="nav-btn primary" id="nextBtn" aria-label="Next">→</button>
+  </div>
+</div>
+
+<script>
+// ---------------- SLIDES ----------------
+const slides = document.querySelectorAll('.slide');
+const navDots = document.getElementById('navDots');
+const navLabel = document.getElementById('navLabel');
+const progressFill = document.getElementById('progressFill');
+const slidesContainer = document.getElementById('slidesContainer');
+const stepLabels = ['Intro', 'Concept', 'Anatomy', 'Real flow', 'Use cases', 'Comparison', 'Try it', 'Pitfalls', 'Quiz', 'Recap'];
+
+let current = 0;
+
+const slideAnnotations = {};
+
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => showSlide(i);
+  navDots.appendChild(d);
+});
+
+function showSlide(i) {
+
+  // Save current slide drawing
+  if (current >= 0) {
+    slideAnnotations[current] = canvas.toDataURL();
+  }
+
+  // Disable drawing mode
+  isDrawMode = false;
+  isDrawing = false;
+
+  canvas.classList.remove('draw-active');
+  pencilBtn.classList.remove('active-tool');
+
+  slides[current].classList.remove('active');
+  navDots.children[current].classList.remove('active');
+
+  current = Math.max(0, Math.min(i, slides.length - 1));
+
+  slides[current].classList.add('active');
+  navDots.children[current].classList.add('active');
+
+  navLabel.textContent = stepLabels[current] || '';
+  progressFill.style.width = `${((current + 1) / slides.length) * 100}%`;
+
+  slidesContainer.scrollTop = 0;
+
+  clearAnnotations();
+
+  // Restore annotation for current slide
+  if (slideAnnotations[current]) {
+    const img = new Image();
+
+    img.onload = () => {
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width / (window.devicePixelRatio || 1),
+        canvas.height / (window.devicePixelRatio || 1)
+      );
+    };
+
+    img.src = slideAnnotations[current];
+  }
+}
+
+document.getElementById('nextBtn').addEventListener('pointerup', () => {
+  showSlide(current + 1);
+});
+
+document.getElementById('prevBtn').addEventListener('pointerup', () => {
+  showSlide(current - 1);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showSlide(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') showSlide(current - 1);
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+// ---------------- ACCORDION ----------------
+function toggleAcc(el) { el.classList.toggle('open'); }
+
+// ---------------- ANATOMY ----------------
+const anatomyData = {
+  1: '<strong>📥 From:</strong> The array you want to filter. Usually the output of "Get items" or an HTTP action.',
+  2: '<strong>🎯 Rule:</strong> The condition that decides which items stay. <span class="pill">item()</span> refers to the current item being evaluated.',
+  3: '<strong>📤 Output:</strong> The filtered array. Use <span class="pill">body(\'Filter_array\')</span> to reference it in later actions.',
+  4: '<strong>🔢 Count:</strong> How many items passed the rule. Use <span class="pill">length()</span> to get the number.'
+};
+document.querySelectorAll('.anatomy-row').forEach(row => {
+  row.addEventListener('click', () => {
+    document.querySelectorAll('.anatomy-row').forEach(r => r.classList.remove('active'));
+    row.classList.add('active');
+    document.getElementById('anatomyDetail').innerHTML = anatomyData[row.dataset.anatomy];
+  });
+});
+
+// ---------------- TRY IT ----------------
+const orders = [
+  { id: 'A-101', amount: 40 },
+  { id: 'A-102', amount: 250 },
+  { id: 'A-103', amount: 90 },
+  { id: 'A-104', amount: 310 },
+  { id: 'A-105', amount: 130 },
+  { id: 'A-106', amount: 60 }
+];
+
+function runFilter() {
+  const min = parseInt(document.getElementById('minAmount').value);
+  const table = document.getElementById('resultTable');
+  const msg = document.getElementById('resultMsg');
+  table.innerHTML = '';
+  let count = 0;
+  orders.forEach(o => {
+    const hit = o.amount > min;
+    if (hit) count++;
+    const row = document.createElement('div');
+    row.className = 'row ' + (hit ? 'hit' : 'miss');
+    row.innerHTML = `<span>${o.id}${hit ? ' ✅' : ''}</span><span>$${o.amount}</span>`;
+    table.appendChild(row);
+  });
+  msg.innerHTML = `<strong>${count}</strong> of ${orders.length} orders passed the rule. Output is an array of ${count} item${count !== 1 ? 's' : ''}.`;
+}
+
+// ---------------- QUIZ ----------------
+function answer(el, correct) {
+  const parent = el.parentElement;
+  if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  parent.querySelectorAll('.quiz-option').forEach(opt => opt.classList.add('disabled'));
+  if (!correct) {
+    parent.querySelectorAll('.quiz-option').forEach(opt => {
+      if (opt.getAttribute('onclick').includes('true')) opt.classList.add('correct');
+    });
+  }
+}
+
+// ---------------- PENCIL + FULLSCREEN ----------------
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const pencilBtn = document.getElementById('pencilBtn');
+const clearBtn = document.getElementById('clearBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() {
+
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); });
+
+canvas.addEventListener('pointerdown', e => {
+
+  if (!isDrawMode) return;
+
+  isDrawing = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(e.clientX, e.clientY); ctx.stroke();
+  lastX = e.clientX; lastY = e.clientY;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt => canvas.addEventListener(evt, () => isDrawing = false));
+
+pencilBtn.addEventListener('click', (e) => {
+
+  e.stopPropagation();
+
+  isDrawMode = !isDrawMode;
+
+  if (isDrawMode) {
+    canvas.classList.add('draw-active');
+    pencilBtn.classList.add('active-tool');
+  } else {
+    canvas.classList.remove('draw-active');
+    pencilBtn.classList.remove('active-tool');
+    isDrawing = false;
+  }
+});
+function clearAnnotations() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (slideAnnotations[current]) {
+    delete slideAnnotations[current];
+  }
+}
+clearBtn.addEventListener('click', clearAnnotations);
+
+// Fullscreen with iPad Safari fallback
+function toggleFullscreen() {
+  const el = document.documentElement;
+  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+
+  if (!isFull) {
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+// ---------------- INIT ----------------
+showSlide(0);
+</script>
+</body>
+</html>
