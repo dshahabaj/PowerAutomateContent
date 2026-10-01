@@ -58,7 +58,7 @@ body {
   pointer-events: auto;
 }
 
-/* Dynamic slide-specific colors */
+/* ---------- DYNAMIC THEMES ---------- */
 .slide[data-theme="red"] .card { border-color: rgba(239,68,68,.35); box-shadow: 0 30px 80px rgba(239,68,68,.25), inset 0 1px 0 rgba(255,255,255,.15); }
 .slide[data-theme="red"] .slide-number { color: #f87171; }
 .slide[data-theme="red"] h1 { background: linear-gradient(90deg, #ef4444, #f97316, #fbbf24, #ef4444); background-size: 300%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -101,6 +101,7 @@ body {
 .slide[data-theme="pink"] .badge { background: rgba(236,72,153,.12); color: #f9a8d4; border-color: rgba(236,72,153,.3); }
 .slide[data-theme="pink"] .callout { background: rgba(236,72,153,.12); border-color: rgba(236,72,153,.35); border-left-color: #ec4899; color: #fbcfe8; }
 
+/* ---------- CARD ---------- */
 .card {
   width: 92%;
   max-width: 1300px;
@@ -241,6 +242,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
 
 .small-note { font-size: 0.92rem; color: #cbd5e1; margin-top: 14px; }
 
+/* ---------- NAVIGATION (z-index raised so pencil mode doesn't block) ---------- */
 .nav {
   position: absolute;
   top: 50%;
@@ -254,7 +256,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
   cursor: pointer;
   background: linear-gradient(145deg, #dc2626, #f97316);
   box-shadow: 0 10px 30px rgba(239,68,68,.35);
-  z-index: 999;
+  z-index: 2500;
   transition: transform .2s;
 }
 
@@ -269,7 +271,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
   display: flex;
   justify-content: center;
   gap: 10px;
-  z-index: 1000;
+  z-index: 2500;
 }
 
 .dot {
@@ -294,7 +296,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
   width: 100%;
   height: 6px;
   background: rgba(255,255,255,.08);
-  z-index: 1000;
+  z-index: 2500;
 }
 
 .progress-fill {
@@ -310,7 +312,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
   right: 18px;
   display: flex;
   gap: 10px;
-  z-index: 2000;
+  z-index: 2500;
 }
 
 .draw-btn {
@@ -334,7 +336,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
   color: #94a3b8;
   font-size: 0.9rem;
   letter-spacing: 1px;
-  z-index: 1000;
+  z-index: 2500;
 }
 
 #annotationLayer {
@@ -343,7 +345,7 @@ li { margin: 10px 0; line-height: 1.7; font-size: clamp(0.95rem, 1.2vw, 1.15rem)
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1500;
+  z-index: 2000; /* below nav (2500) so arrows stay clickable */
 }
 
 #annotationLayer.draw-active { pointer-events: auto; cursor: crosshair; }

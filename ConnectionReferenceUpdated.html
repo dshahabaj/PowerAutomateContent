@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power Platform Connection References</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  overflow: hidden;
+  color: white;
+  background:
+    radial-gradient(circle at top left, rgba(37,99,235,.9) 0%, transparent 35%),
+    radial-gradient(circle at top right, rgba(124,58,237,.9) 0%, transparent 35%),
+    radial-gradient(circle at bottom, rgba(6,182,212,.7) 0%, transparent 30%),
+    #020617;
+  animation: bgMove 12s ease infinite alternate;
+}
+
+@keyframes bgMove {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(25deg); }
+}
+
+.slider {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  opacity: 0;
+  transform: scale(.95) translateY(25px);
+  transition: .8s ease;
+  pointer-events: none;
+}
+
+.slide.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.card {
+  width: 92%;
+  max-width: 1300px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 28px;
+  padding: 40px 45px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.15);
+}
+
+.card::-webkit-scrollbar { width: 8px; }
+.card::-webkit-scrollbar-thumb {
+  background: #00e5ff;
+  border-radius: 50px;
+}
+
+.slide-number {
+  color: #00e5ff;
+  font-size: 14px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 3.2vw, 2.8rem);
+  line-height: 1.15;
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, #00e5ff, #8b5cf6, #ec4899, #00e5ff);
+  background-size: 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientText 8s linear infinite;
+}
+
+@keyframes gradientText {
+  0% { background-position: 0%; }
+  100% { background-position: 300%; }
+}
+
+p {
+  color: #d1d5db;
+  line-height: 1.75;
+  margin-bottom: 14px;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+}
+
+ul {
+  padding-left: 22px;
+  margin-top: 14px;
+}
+
+li {
+  margin: 10px 0;
+  line-height: 1.7;
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+}
+
+.hero-architecture {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 35px;
+}
+
+.node {
+  padding: 18px 25px;
+  border-radius: 18px;
+  font-weight: 600;
+  min-width: 210px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  font-size: clamp(0.95rem, 1.1vw, 1.1rem);
+}
+
+.app { background: linear-gradient(135deg,#2563eb,#3b82f6); }
+.reference { background: linear-gradient(135deg,#7c3aed,#9333ea); }
+.connection { background: linear-gradient(135deg,#0891b2,#06b6d4); }
+.system { background: linear-gradient(135deg,#16a34a,#22c55e); }
+
+.connector-line {
+  width: 60px;
+  height: 4px;
+  background: #00e5ff;
+  border-radius: 50px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, 0.12);
+  color: #7dd3fc;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.callout {
+  background: rgba(15, 118, 110, 0.18);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-left: 5px solid #2dd4bf;
+  border-radius: 16px;
+  padding: 18px 22px;
+  margin-top: 20px;
+  color: #d1fae5;
+  font-size: clamp(0.95rem, 1.15vw, 1.1rem);
+  line-height: 1.7;
+}
+
+.example {
+  background: linear-gradient(135deg, rgba(37,99,235,.18), rgba(139,92,246,.14));
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  padding: 18px 22px;
+  margin-top: 18px;
+  font-size: clamp(0.95rem, 1.15vw, 1.1rem);
+}
+
+.example strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #a5f3fc;
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.metric {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.metric strong {
+  display: block;
+  font-size: 2rem;
+  color: #00e5ff;
+  margin-bottom: 6px;
+}
+
+.small-note {
+  font-size: 0.92rem;
+  color: #cbd5e1;
+  margin-top: 14px;
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #8b5cf6, #00e5ff);
+  box-shadow: 0 10px 30px rgba(0,229,255,.35);
+  z-index: 999;
+  transition: transform .2s;
+}
+
+.nav:hover { transform: translateY(-50%) scale(1.08); }
+
+.prev { left: 20px; }
+.next { right: 20px; }
+
+.dots {
+  position: absolute;
+  bottom: 18px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.dot {
+  height: 13px;
+  width: 13px;
+  border-radius: 50%;
+  background: #475569;
+  cursor: pointer;
+  transition: .3s;
+}
+
+.dot.active {
+  background: #00e5ff;
+  box-shadow: 0 0 15px #00e5ff;
+  transform: scale(1.2);
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,.08);
+  z-index: 1000;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 10%;
+  background: linear-gradient(90deg, #00e5ff, #8b5cf6);
+  transition: .5s;
+}
+
+.draw-tools {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  gap: 10px;
+  z-index: 2000;
+}
+
+.draw-btn {
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(15,23,42,0.75);
+  color: white;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  font-family: 'Poppins', sans-serif;
+}
+
+.draw-btn:hover {
+  background: rgba(30,41,59,0.95);
+}
+
+.slide-counter {
+  position: absolute;
+  bottom: 18px;
+  right: 30px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  z-index: 1000;
+}
+
+#annotationLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1500;
+}
+
+#annotationLayer.draw-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card { padding: 25px; }
+  .two-col { grid-template-columns: 1fr; }
+  .nav { width: 48px; height: 48px; font-size: 18px; }
+  .prev { left: 8px; }
+  .next { right: 8px; }
+  .node { min-width: 160px; padding: 14px 18px; }
+  .connector-line { width: 30px; }
+}
+</style>
+</head>
+<body>
+
+<div class="draw-tools">
+  <button class="draw-btn" id="drawToggle" title="Toggle pencil mode">✏️ Pencil</button>
+  <button class="draw-btn" id="clearDraw" title="Clear annotations">Clear</button>
+  <button class="draw-btn" id="fullscreenToggle" title="Toggle fullscreen">⛶ Full</button>
+</div>
+
+<div class="progress-bar">
+  <div class="progress-fill"></div>
+</div>
+
+<div class="slider">
+  <canvas id="annotationLayer"></canvas>
+
+  <!-- SLIDE 0: INTRO -->
+  <!-- SPEAKER: "In the next 10 minutes, I'll show you why Connection References are the difference between a flow that works in Dev and one that survives Production." -->
+  <div class="slide active">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">00</div>
+      <h1>Connection References in Power Automate</h1>
+      <div class="badge">Power Platform | ALM | Governance</div>
+      <p style="font-size:1.3rem; color:#a5f3fc; margin-top:20px;">
+        The difference between a flow that works in Dev<br>and one that survives Production.
+      </p>
+      <div class="callout" style="text-align:left; margin-top:30px;">
+        <strong>What you'll learn today:</strong>
+        <ul>
+          <li>What Connection References actually are</li>
+          <li>Connector vs Connection vs Connection Reference</li>
+          <li>Why deployments break without them</li>
+          <li>Real-world example: Leave Request Flow</li>
+          <li>Best practices for production</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 1: WHAT IS A CONNECTION REFERENCE -->
+  <!-- SPEAKER: "Connection References let you build flows independently from the authentication details of the connector. You build the logic once. Admins map the credentials per environment." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">01</div>
+      <h1>What is a Connection Reference?</h1>
+      <p>
+        A reusable pointer that tells your flow which connection to use — without hardcoding credentials into the flow logic.
+      </p>
+      <div class="callout">
+        Build the flow once. Map the credentials per environment. No code changes.
+      </div>
+      <div class="hero-architecture">
+        <div class="node app">Flow / App</div>
+        <div class="connector-line"></div>
+        <div class="node reference">Connection Reference</div>
+        <div class="connector-line"></div>
+        <div class="node connection">Actual Connection</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: CONNECTOR VS CONNECTION VS REFERENCE -->
+  <!-- SPEAKER: "Three things. Don't mix them up. Connector is the service. Connection is the login. Connection Reference is the pointer." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">02</div>
+      <h1>Connector vs Connection vs Reference</h1>
+      <div class="two-col">
+        <div>
+          <div class="badge">Connector</div>
+          <p>The service interface. SharePoint, Outlook, SQL, Dataverse.</p>
+        </div>
+        <div>
+          <div class="badge">Connection</div>
+          <p>The authenticated instance. Credentials or service principal.</p>
+        </div>
+      </div>
+      <div class="example">
+        <strong>Connection Reference</strong>
+        A reusable pointer that tells the flow which connection to use in a given environment.
+      </div>
+      <div class="callout">
+        Connector = capability. Connection = authentication. Reference = portability.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: WHY IT MATTERS (MERGED OLD 3 + 6) -->
+  <!-- SPEAKER: "Here's the real problem. Dev uses your account. Prod uses a service account. Without a reference, the flow breaks on deployment. Every time." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">03</div>
+      <h1>Why It Matters in Real Projects</h1>
+      <p>Dev uses a developer account. Test uses a service account. Production uses a secured enterprise identity.</p>
+      <div class="example">
+        <strong>Without a Connection Reference</strong>
+        The flow is tied to one user. Deployment breaks. Tokens expire. Reports fail silently.
+      </div>
+      <div class="callout">
+        Connection References separate <strong>logic</strong> from <strong>credentials</strong>. Same solution. Different environment. Zero rework.
+      </div>
+      <ul>
+        <li>Reduced deployment failures</li>
+        <li>Centralized administration</li>
+        <li>Cleaner governance and audits</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: ARCHITECTURE -->
+  <!-- SPEAKER: "Think of the flow as a decision engine. The connection reference is the routing layer between the app and the real backend service." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">04</div>
+      <h1>Architecture: How It Works</h1>
+      <div class="hero-architecture">
+        <div class="node app">Power Automate Flow</div>
+        <div class="connector-line"></div>
+        <div class="node reference">Connection Reference</div>
+        <div class="connector-line"></div>
+        <div class="node connection">Dataverse / SharePoint / Outlook</div>
+      </div>
+      <div class="two-col">
+        <div class="example">
+          <strong>Developer View</strong>
+          Build the flow using connector actions and a connection reference.
+        </div>
+        <div class="example">
+          <strong>Admin View</strong>
+          Map the reference to the correct authorized connection per environment.
+        </div>
+      </div>
+      <div class="small-note">This makes the solution portable and reduces ops risk.</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: LIVE DEMO PLACEHOLDER -->
+  <!-- SPEAKER: "Let me show you this in the actual portal. Here's a flow. Here's the connection reference. Here's where the admin maps it." -->
+  <div class="slide">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">05</div>
+      <h1>Live Demo</h1>
+      <p style="margin-top:20px; font-size:1.2rem;">
+        Open Power Automate → Show the flow → Show the connection reference → Show the environment mapping
+      </p>
+      <div class="callout" style="text-align:left; margin-top:30px;">
+        <strong>Demo checklist:</strong>
+        <ul>
+          <li>Open make.powerautomate.com</li>
+          <li>Open a flow inside a solution</li>
+          <li>Show the Connection Reference in the flow</li>
+          <li>Switch to Solutions → show the reference mapping</li>
+          <li>Show how to remap per environment</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: REAL EXAMPLE (OLD SLIDE 5) -->
+  <!-- SPEAKER: "Imagine HR uses a flow to handle leave requests. Employee submits. Flow reads. Approval sent. Status updated. Employee notified." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">06</div>
+      <h1>Real Example: Leave Request Flow</h1>
+      <div class="example">
+        <strong>Workflow</strong>
+        <ul>
+          <li>Employee submits leave request in Power Apps</li>
+          <li>Flow reads the request from SharePoint list</li>
+          <li>Flow sends approval email</li>
+          <li>Flow updates the request status in SharePoint</li>
+          <li>Flow notifies the employee</li>
+        </ul>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="badge">Before</div>
+          <p>Flow points to a developer account. Breaks after deployment.</p>
+        </div>
+        <div>
+          <div class="badge">After</div>
+          <p>Flow uses a reference. Admin maps it per environment. No edits needed.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: DEPLOYMENT & ALM (OLD SLIDE 7) -->
+  <!-- SPEAKER: "During ALM, you export the solution. Import it. The admin maps the reference. Then you validate and promote. Without references, you reconfigure every time." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">07</div>
+      <h1>Deployment & ALM Process</h1>
+      <div class="example">
+        <strong>Typical flow</strong>
+        <ol>
+          <li>Build flow in Development</li>
+          <li>Add connector + connection reference in Solution</li>
+          <li>Export managed or unmanaged solution</li>
+          <li>Import to Test / UAT</li>
+          <li>Admin maps the correct connection</li>
+          <li>Validate and promote</li>
+        </ol>
+      </div>
+      <div class="callout">
+        Critical for CI/CD. Without references, every deployment needs manual reconfiguration.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: SECURITY & GOVERNANCE -->
+  <!-- SPEAKER: "Security isn't just about who has access. It's about how credentials are managed and kept separate from your logic." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">08</div>
+      <h1>Security & Governance</h1>
+      <ul>
+        <li>Never use personal accounts for production automation</li>
+        <li>Use service accounts with least privilege</li>
+        <li>Review ownership of connection references regularly</li>
+        <li>Align policies with Microsoft Entra and environment security</li>
+      </ul>
+      <div class="callout">
+        Connection References separate business logic from authentication. Audits become easier. Reviews become faster.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: BEST PRACTICES -->
+  <!-- SPEAKER: "Simple names. Solutions. Validation. Least privilege. Documentation. Five rules. Follow them." -->
+  <div class="slide">
+    <div class="card">
+      <div class="slide-number">09</div>
+      <h1>Best Practices & Common Mistakes</h1>
+      <ul>
+        <li>Use clear names like <strong>SharePoint_Prod_Reference</strong></li>
+        <li>Keep flows inside a solution</li>
+        <li>Validate mapped connections after every deployment</li>
+        <li>Apply least-privilege access</li>
+        <li>Document who owns the reference and which environment it maps to</li>
+      </ul>
+      <div class="example">
+        <strong>Common mistake</strong>
+        Building a flow with a personal connection. Promoting the solution without updating the production mapping.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: SUMMARY -->
+  <!-- SPEAKER: "Reusable. Secure. Portable. Governed. That's the message. Separate logic from credentials. That's it." -->
+  <div class="slide">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">10</div>
+      <h1>Summary</h1>
+      <div class="hero-architecture" style="margin-top:40px;">
+        <div class="node app">Reusable</div>
+        <div class="node reference">Secure</div>
+        <div class="node connection">Portable</div>
+        <div class="node system">Governed</div>
+      </div>
+      <div class="callout" style="text-align:left; margin-top:40px;">
+        Connection References separate your <strong>automation logic</strong> from your <strong>credentials</strong>. That makes deployments safer, cleaner, and enterprise-ready.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: OUTRO -->
+  <!-- SPEAKER: "If this helped you, subscribe. New Power Automate content every day. Next video is on DLP Policies. Link is in the description." -->
+  <div class="slide">
+    <div class="card" style="text-align:center;">
+      <div class="slide-number">11</div>
+      <h1>Thanks for Watching</h1>
+      <p style="font-size:1.3rem; margin-top:20px;">
+        New Power Automate content every day.
+      </p>
+      <div class="callout" style="text-align:left; margin-top:30px;">
+        <strong>Next up:</strong> DLP Policies in Power Platform — the silent killer of your flows.
+        <br><br>
+        <strong>Subscribe</strong> for daily tips, tutorials, and real-world walkthroughs.
+      </div>
+    </div>
+  </div>
+
+  <button class="nav prev" aria-label="Previous slide">❮</button>
+  <button class="nav next" aria-label="Next slide">❯</button>
+  <div class="dots"></div>
+  <div class="slide-counter"><span id="currentSlide">1</span> / <span id="totalSlides">12</span></div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsContainer = document.querySelector('.dots');
+const progressFill = document.querySelector('.progress-fill');
+const annotationLayer = document.getElementById('annotationLayer');
+const drawToggle = document.getElementById('drawToggle');
+const clearDraw = document.getElementById('clearDraw');
+const fullscreenToggle = document.getElementById('fullscreenToggle');
+const currentSlideEl = document.getElementById('currentSlide');
+const totalSlidesEl = document.getElementById('totalSlides');
+const ctx = annotationLayer.getContext('2d');
+
+let current = 0;
+let isDrawing = false;
+let isDrawMode = false;
+let lastX = 0;
+let lastY = 0;
+
+totalSlidesEl.textContent = slides.length;
+
+function resizeCanvas() {
+  const sliderRect = document.querySelector('.slider').getBoundingClientRect();
+  annotationLayer.width = sliderRect.width;
+  annotationLayer.height = sliderRect.height;
+}
+
+function startDraw(event) {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  const rect = annotationLayer.getBoundingClientRect();
+  lastX = event.clientX - rect.left;
+  lastY = event.clientY - rect.top;
+}
+
+function draw(event) {
+  if (!isDrawing || !isDrawMode) return;
+  const rect = annotationLayer.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#facc15';
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+
+  lastX = x;
+  lastY = y;
+}
+
+function stopDraw() {
+  isDrawing = false;
+}
+
+function toggleDrawMode() {
+  isDrawMode = !isDrawMode;
+  annotationLayer.classList.toggle('draw-active', isDrawMode);
+  drawToggle.textContent = isDrawMode ? '✏️ On' : '✏️ Pencil';
+  drawToggle.style.background = isDrawMode ? 'rgba(250,204,21,0.18)' : 'rgba(15,23,42,0.75)';
+}
+
+function clearAnnotations() {
+  ctx.clearRect(0, 0, annotationLayer.width, annotationLayer.height);
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+window.addEventListener('resize', resizeCanvas);
+annotationLayer.addEventListener('pointerdown', startDraw);
+annotationLayer.addEventListener('pointermove', draw);
+annotationLayer.addEventListener('pointerup', stopDraw);
+annotationLayer.addEventListener('pointerleave', stopDraw);
+annotationLayer.addEventListener('pointercancel', stopDraw);
+drawToggle.addEventListener('click', toggleDrawMode);
+clearDraw.addEventListener('click', clearAnnotations);
+fullscreenToggle.addEventListener('click', toggleFullscreen);
+resizeCanvas();
+
+slides.forEach((_, index) => {
+  const dot = document.createElement('div');
+  dot.classList.add('dot');
+  if (index === 0) dot.classList.add('active');
+  dot.addEventListener('click', () => showSlide(index));
+  dotsContainer.appendChild(dot);
+});
+
+const dots = document.querySelectorAll('.dot');
+
+function updateProgress() {
+  const progress = ((current + 1) / slides.length) * 100;
+  progressFill.style.width = `${progress}%`;
+  currentSlideEl.textContent = current + 1;
+}
+
+function showSlide(index) {
+  slides[current].classList.remove('active');
+  dots[current].classList.remove('active');
+
+  current = (index + slides.length) % slides.length;
+
+  slides[current].classList.add('active');
+  dots[current].classList.add('active');
+  updateProgress();
+
+  // Clear annotations on slide change
+  clearAnnotations();
+}
+
+document.querySelector('.next').addEventListener('click', () => showSlide(current + 1));
+document.querySelector('.prev').addEventListener('click', () => showSlide(current - 1));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') showSlide(current + 1);
+  if (e.key === 'ArrowLeft') showSlide(current - 1);
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+updateProgress();
+</script>
+</body>
+</html>

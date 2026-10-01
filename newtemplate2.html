@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filter Array — Power Automate, from zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+
+:root {
+  --bg: #0a0511;
+  --card: #17111f;
+  --card-2: #1e1729;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+  --accent: #ec4899;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+}
+
+body {
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ---------------- APP SHELL ---------------- */
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 760px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.topbar .icon {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #f0abfc, #fbbf24);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px;
+  margin-right: 11px;
+  flex-shrink: 0;
+}
+
+.topbar .title {
+  font-size: 14px; font-weight: 700;
+  line-height: 1.2;
+}
+.topbar .subtitle {
+  font-size: 11px; color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.topbar .actions {
+  display: flex; gap: 12px;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.progress-track {
+  height: 3px;
+  background: rgba(255,255,255,.05);
+  margin: 0 22px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.progress-track .fill {
+  height: 100%;
+  width: 5%;
+  background: linear-gradient(90deg, var(--accent), #fbbf24);
+  transition: width .35s ease;
+}
+
+/* ---------------- SLIDES ---------------- */
+.slides {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 22px 22px 30px;
+}
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #4a3a55; border-radius: 6px; }
+
+.slide { display: none; animation: fadeUp .4s ease; }
+.slide.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+h2 {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 14px;
+  letter-spacing: -0.3px;
+}
+
+h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+p {
+  color: var(--text-dim);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.highlight { color: var(--text); font-weight: 600; }
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 40px 10px;
+}
+.hero .hero-icon {
+  font-size: 64px;
+  margin-bottom: 18px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.hero h2 {
+  font-size: 34px;
+  background: linear-gradient(135deg, #f0abfc, #22d3ee, #fbbf24);
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 6s ease infinite;
+  margin-bottom: 14px;
+}
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.hero p {
+  font-size: 17px;
+  color: #d1d5db;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ---------------- CARDS ---------------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+
+.card.tint { background: var(--card-2); }
+
+.card-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.card-label.cyan { color: var(--accent-2); }
+.card-label.green { color: var(--green); }
+.card-label.yellow { color: var(--yellow); }
+.card-label.purple { color: var(--purple); }
+.card-label.orange { color: var(--orange); }
+
+/* CHECKLIST */
+.checklist-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.checklist-item:last-child { border-bottom: none; }
+.checklist-item .box {
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  background: rgba(74,222,128,.15);
+  border: 1.5px solid var(--green);
+  color: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.checklist-item .body { font-size: 14px; line-height: 1.5; }
+
+/* RECAP */
+.recap-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.recap-item .check { color: var(--green); font-size: 18px; flex-shrink: 0; line-height: 1.4; }
+.recap-item .body { flex: 1; font-size: 14px; line-height: 1.55; color: var(--text-dim); }
+.recap-item .body strong { color: var(--text); font-weight: 700; }
+
+/* PILL */
+.pill {
+  display: inline-block;
+  background: rgba(34,211,238,.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--accent-2);
+  margin: 0 2px;
+  border: 1px solid rgba(34,211,238,.2);
+}
+.pill.pink {
+  background: rgba(236,72,153,.1);
+  color: var(--accent);
+  border-color: rgba(236,72,153,.2);
+}
+.pill.green {
+  background: rgba(74,222,128,.1);
+  color: var(--green);
+  border-color: rgba(74,222,128,.2);
+}
+
+/* CODE BLOCK */
+.code-block {
+  background: #0d0817;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: #e2e8f0;
+  overflow-x: auto;
+  margin: 12px 0;
+  line-height: 1.6;
+}
+.code-block .kw { color: #f472b6; }
+.code-block .str { color: #a5f3fc; }
+.code-block .num { color: #fbbf24; }
+.code-block .fn { color: #86efac; }
+.code-block .cm { color: #64748b; font-style: italic; }
+
+/* TABLE */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13.5px;
+  background: var(--card-2);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.data-table th {
+  text-align: left;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.03);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent-2);
+  background: rgba(34,211,238,.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ACCORDION */
+.accordion {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .2s;
+}
+.accordion:hover { background: var(--card-2); }
+.accordion-header {
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  gap: 12px;
+}
+.accordion-header .arrow {
+  color: var(--text-dim);
+  transition: transform .3s ease;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.accordion.open .accordion-header .arrow { transform: rotate(180deg); }
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease, padding .3s ease;
+  padding: 0 18px;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.accordion.open .accordion-body {
+  max-height: 400px;
+  padding: 0 18px 18px;
+}
+
+/* ANATOMY */
+.anatomy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-2);
+  padding: 13px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  transition: all .3s;
+  cursor: pointer;
+}
+.anatomy-row:hover { border-color: rgba(255,255,255,.1); }
+.anatomy-row.active { border-color: var(--accent); background: rgba(236,72,153,.06); }
+.anatomy-row .left { font-size: 13.5px; }
+.anatomy-row .dot {
+  width: 26px; height: 26px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+.anatomy-detail {
+  background: var(--card-2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.6;
+  min-height: 60px;
+  border: 1px solid var(--border);
+}
+
+/* FLOW MOCK */
+.flow-mock {
+  background: var(--card-2);
+  border-radius: 16px;
+  padding: 18px;
+  margin: 14px 0;
+}
+.flow-action {
+  background: var(--card);
+  border-radius: 11px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--accent-2);
+}
+.flow-action.pink { border-left-color: var(--accent); }
+.flow-action.green { border-left-color: var(--green); }
+.flow-action.grey { border-left-color: #64748b; }
+.flow-action .icon { font-size: 18px; flex-shrink: 0; }
+.flow-action .name { font-weight: 600; font-size: 13.5px; }
+.flow-action .meta { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+.flow-loop {
+  border: 2px dashed var(--green);
+  border-radius: 14px;
+  padding: 12px;
+  margin-top: 6px;
+  background: rgba(74,222,128,.04);
+}
+.flow-loop .label {
+  font-size: 11px;
+  color: var(--green);
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+/* TRY IT */
+.tryit {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+}
+.tryit label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.tryit select, .tryit input {
+  width: 100%;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 13px 20px;
+  border-radius: 11px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .15s;
+  width: 100%;
+}
+.btn:hover { transform: scale(1.02); }
+.btn.green { background: var(--green); color: #052e16; }
+.btn.cyan { background: var(--accent-2); color: #042f2e; }
+
+.result-table {
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+.result-table .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  border-radius: 6px;
+}
+.result-table .row:last-child { border-bottom: none; }
+.result-table .row.hit { color: var(--green); font-weight: 600; background: rgba(74,222,128,.06); }
+.result-table .row.miss { color: #52525b; }
+
+/* QUIZ */
+.quiz-q {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.quiz-q .question { font-weight: 700; font-size: 14.5px; margin-bottom: 12px; }
+.quiz-option {
+  background: var(--card-2);
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 7px;
+  cursor: pointer;
+  font-size: 13.5px;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.quiz-option:hover { border-color: rgba(255,255,255,.15); }
+.quiz-option.correct { background: rgba(74,222,128,.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; opacity: .55; }
+
+/* FLIP CARDS */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+.flip-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 18px;
+  min-height: 170px;
+  cursor: pointer;
+  position: relative;
+  transition: all .3s;
+  border: 1px solid var(--border);
+}
+.flip-card .back { display: none; }
+.flip-card.flipped .front { display: none; }
+.flip-card.flipped .back { display: block; }
+.flip-card h4 { font-size: 16px; margin-bottom: 8px; }
+.flip-card p { font-size: 13px; margin-bottom: 0; line-height: 1.5; }
+.flip-hint {
+  position: absolute; bottom: 10px; right: 14px;
+  font-size: 10px; color: var(--text-dim);
+}
+
+/* TAKEAWAY */
+.takeaway {
+  background: linear-gradient(135deg, rgba(74,222,128,.1), rgba(34,211,238,.06));
+  border-left: 4px solid var(--green);
+  border-radius: 12px;
+  padding: 15px 18px;
+  margin-top: 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #d1fae5;
+}
+.takeaway strong { color: white; font-weight: 700; }
+
+/* USE CASE CARD */
+.usecase {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+}
+.usecase .icon { font-size: 26px; flex-shrink: 0; }
+.usecase h4 { font-size: 15px; margin-bottom: 6px; }
+.usecase p { font-size: 13px; margin-bottom: 8px; }
+.usecase .rule {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  background: rgba(34,211,238,.08);
+  color: var(--accent-2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  border: 1px solid rgba(34,211,238,.15);
+}
+
+/* CHEAT SHEET */
+.cheat-sheet {
+  background: linear-gradient(135deg, #1a0f24, #0d0817);
+  border: 2px solid var(--accent);
+  border-radius: 18px;
+  padding: 22px;
+  margin: 14px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: #e2e8f0;
+}
+.cheat-sheet .title {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 14px;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.cheat-sheet .row { display: flex; gap: 12px; }
+.cheat-sheet .key { color: var(--accent-2); min-width: 100px; }
+.cheat-sheet .val { color: var(--text-dim); }
+.cheat-sheet .divider {
+  border-top: 1px dashed rgba(255,255,255,.1);
+  margin: 12px 0;
+}
+.cheat-sheet .section-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+/* BOTTOM NAV */
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 22px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.nav-btn {
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+}
+.nav-btn:hover { background: var(--accent); border-color: var(--accent); }
+.nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+.nav-btn:disabled:hover { background: var(--card-2); border-color: var(--border); }
+.nav-center {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.nav-center .section-name { color: var(--accent); }
+
+/* FLOATING TOOLS */
+.floating-tools {
+  position: fixed;
+  top: 14px; right: 14px;
+  display: flex; gap: 6px;
+  z-index: 999;
+}
+.tool-btn {
+  background: rgba(30,23,41,.92);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 8px 11px;
+  border-radius: 9px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  backdrop-filter: blur(10px);
+}
+.tool-btn:hover { background: rgba(50,40,65,.95); }
+
+#annotationLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 500;
+}
+#annotationLayer.draw-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+@media (max-width: 480px) {
+  h2 { font-size: 22px; }
+  .hero h2 { font-size: 26px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .app { max-width: 100%; }
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 10px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="floating-tools">
+  <button class="tool-btn" id="drawToggle">✏️ Pencil</button>
+  <button class="tool-btn" id="clearDraw">Clear</button>
+  <button class="tool-btn" id="fullscreenToggle">⛶</button>
+</div>
+
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex; align-items:center;">
+      <div class="icon">🔎</div>
+      <div>
+        <div class="title">Power Automate, from zero</div>
+        <div class="subtitle">Lesson: Filter Array</div>
+      </div>
+    </div>
+    <div class="actions"><span>💬</span><span>↗</span></div>
+  </div>
+
+  <div class="progress-track"><div class="fill" id="progressFill"></div></div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- 01 — WELCOME -->
+    <div class="slide active" data-section="Learn">
+      <div class="hero">
+        <div class="hero-icon">🔎</div>
+        <h2>Filter Array</h2>
+        <p>Filter any list in one step. No loops. No lag. Just the items you actually need.</p>
+      </div>
+      <div class="card tint">
+        <div class="card-label">Lesson Overview</div>
+        <p style="margin-bottom:0;">22 screens. From the basics to advanced conditions. Built as a self-contained lesson — no account or setup needed.</p>
+      </div>
+    </div>
+
+    <!-- 02 — OBJECTIVES -->
+    <div class="slide" data-section="Learn">
+      <div class="step-label">02 — What you'll learn</div>
+      <h2>By the end of this lesson</h2>
+      <div class="card">
+        <div class="checklist-item"><div class="box">✓</div><div class="body">Understand exactly what Filter Array does</div></div>
+        <div class="checklist-item"><div class="box">✓</div><div class="body">Know when to use it — and when NOT to</div></div>
+        <div class="checklist-item"><div class="box">✓</div><div class="body">Write basic and advanced filter conditions</div></div>
+        <div class="checklist-item"><div class="box">✓</div><div class="body">Avoid the 4 most common mistakes</div></div>
+        <div class="checklist-item"><div class="box">✓</div><div class="body">Use it alongside Select for clean, structured data</div></div>
+      </div>
+    </div>
+
+    <!-- 03 — PREREQUISITES -->
+    <div class="slide" data-section="Learn">
+      <div class="step-label">03 — Before you start</div>
+      <h2>Prerequisites</h2>
+      <p>This lesson assumes you already know the basics. If any of these are unfamiliar, start with the intro lesson first.</p>
+      <div class="card">
+        <div class="card-label cyan">You should already know</div>
+        <ul style="list-style:none; padding:0; color:var(--text-dim); font-size:14px; line-height:1.9;">
+          <li>→ Basic Power Automate portal navigation</li>
+          <li>→ What a trigger and an action are</li>
+          <li>→ What an array is (a list of items)</li>
+          <li>→ How to use Dynamic Content</li>
+        </ul>
+      </div>
+      <div class="takeaway"><strong>💡 Tip:</strong> If you've built even one flow before, you're ready.</div>
+    </div>
+
+    <!-- 04 — THE PROBLEM -->
+    <div class="slide" data-section="Learn">
+      <div class="step-label">04 — Why this matters</div>
+      <h2>The problem with loops</h2>
+      <div class="card">
+        <div class="card-label yellow">Scenario</div>
+        <p>You have <span class="highlight">500 SharePoint items</span>. Only <span class="highlight">12</span> are marked as "Approved". You need to email the assigned managers for those 12.</p>
+      </div>
+      <div class="card tint">
+        <div class="card-label" style="color:var(--red);">Without Filter Array</div>
+        <p style="margin-bottom:0;">Apply to Each runs 500 times. You check each item inside the loop. <strong style="color:var(--red);">Slow. Wasteful. Ugly.</strong></p>
+      </div>
+      <div class="card tint">
+        <div class="card-label green">With Filter Array</div>
+        <p style="margin-bottom:0;">Filter first → 12 items. Apply to Each runs 12 times. <strong style="color:var(--green);">97% faster.</strong></p>
+      </div>
+    </div>
+
+    <!-- 05 — CONCEPT -->
+    <div class="slide" data-section="Learn">
+      <div class="step-label">05 — What it is</div>
+      <h2>From array + a condition</h2>
+      <p>Filter Array needs two things: an array of items, and a rule that decides which ones stay.</p>
+      <div class="card">
+        <div class="card-label cyan">Input</div>
+        <p style="margin-bottom:8px;">An array of items</p>
+        <div class="card-label" style="color:var(--accent);">Rule</div>
+        <p style="margin-bottom:0;">A condition (e.g., amount greater than 100)</p>
+      </div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> The output is always an array. Use <span class="pill">length()</span> to count the matches.</div>
+    </div>
+
+    <!-- 06 — ANATOMY -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">06 — Look inside one</div>
+      <h2>The anatomy of Filter Array</h2>
+      <p>Tap a numbered dot to see what each part does.</p>
+      <div class="anatomy-row" data-anatomy="1"><div class="left">📥 From: <span class="pill">outputs('Get_orders')</span></div><div class="dot">1</div></div>
+      <div class="anatomy-row" data-anatomy="2"><div class="left">🎯 Rule: <span class="pill">item()?['amount'] > 100</span></div><div class="dot">2</div></div>
+      <div class="anatomy-row" data-anatomy="3"><div class="left">📤 Output: <span class="pill">body('Filter_array')</span></div><div class="dot">3</div></div>
+      <div class="anatomy-row" data-anatomy="4"><div class="left">🔢 Count: <span class="pill">length(body('Filter_array'))</span></div><div class="dot">4</div></div>
+      <div class="anatomy-detail" id="anatomyDetail">Select a numbered dot above to see what that part does.</div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> The output is a shorter array with the same item shape.</div>
+    </div>
+
+    <!-- 07 — INPUTS EXPLAINED -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">07 — Deep dive: Inputs</div>
+      <h2>What goes into "From"</h2>
+      <p>The <span class="pill">From</span> field takes any array. Here are the most common sources:</p>
+      <table class="data-table">
+        <thead><tr><th>Source</th><th>Expression</th></tr></thead>
+        <tbody>
+          <tr><td>SharePoint Get Items</td><td><code>outputs('Get_items')?['body/value']</code></td></tr>
+          <tr><td>Excel List Rows</td><td><code>body('List_rows_present_in_a_table')?['value']</code></td></tr>
+          <tr><td>HTTP Response</td><td><code>body('HTTP')</code></td></tr>
+          <tr><td>Parse JSON Output</td><td><code>body('Parse_JSON')?['items']</code></td></tr>
+          <tr><td>Variable Array</td><td><code>variables('myArray')</code></td></tr>
+        </tbody>
+      </table>
+      <div class="takeaway"><strong>💡 Tip:</strong> Always use Dynamic Content to pick the array. Avoid typing manually — typos break the flow silently.</div>
+    </div>
+
+    <!-- 08 — CONDITIONS EXPLAINED -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">08 — Deep dive: Conditions</div>
+      <h2>Common operators</h2>
+      <p>Filter Array supports all the standard comparison operators.</p>
+      <table class="data-table">
+        <thead><tr><th>Operator</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>equals</td><td><code>item()?['status'] eq 'Approved'</code></td></tr>
+          <tr><td>not equals</td><td><code>item()?['status'] ne 'Archived'</code></td></tr>
+          <tr><td>greater than</td><td><code>item()?['amount'] gt 100</code></td></tr>
+          <tr><td>less than</td><td><code>item()?['days'] lt 30</code></td></tr>
+          <tr><td>contains</td><td><code>contains(item()?['title'], 'Urgent')</code></td></tr>
+          <tr><td>starts with</td><td><code>startsWith(item()?['code'], 'INV-')</code></td></tr>
+          <tr><td>and / or</td><td><code>and(a, b) / or(a, b)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 09 — OUTPUT EXPLAINED -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">09 — Deep dive: Output</div>
+      <h2>What comes out</h2>
+      <p>The output is <span class="highlight">always an array</span> — even if only one item passes, or none at all.</p>
+      <div class="code-block">
+<span class="cm">// Get the filtered array</span>
+body(<span class="str">'Filter_array'</span>)
+
+<span class="cm">// Count how many passed</span>
+<span class="fn">length</span>(body(<span class="str">'Filter_array'</span>))
+
+<span class="cm">// Get the first item (if you need a single one)</span>
+<span class="fn">first</span>(body(<span class="str">'Filter_array'</span>))
+
+<span class="cm">// Loop over the results</span>
+<span class="kw">Apply to each</span> → body(<span class="str">'Filter_array'</span>)
+      </div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> Empty filter = empty array. Not an error. Design for it.</div>
+    </div>
+
+    <!-- 10 — REAL FLOW -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">10 — See it in the designer</div>
+      <h2>What this looks like as a real flow</h2>
+      <p>Filter Array trimming a list before a loop.</p>
+      <div class="flow-mock">
+        <div class="flow-action cyan"><div class="icon">📋</div><div><div class="name">Get items</div><div class="meta">SharePoint — Orders</div></div></div>
+        <div class="flow-action pink"><div class="icon">🔎</div><div><div class="name">Filter array</div><div class="meta">Amount is greater than 100</div></div></div>
+        <div class="flow-loop">
+          <div class="label">▶ Apply to each — Filter array output</div>
+          <div class="flow-action green"><div class="icon">✉️</div><div><div class="name">Send an email (V2)</div><div class="meta">Only for big orders</div></div></div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> Filter first, then loop. The loop only runs for items that matter.</div>
+    </div>
+
+    <!-- 11 — COMMON CONDITIONS -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">11 — Quick reference</div>
+      <h2>Common conditions you'll use</h2>
+      <table class="data-table">
+        <thead><tr><th>Rule</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Status = Approved</td><td>Keeps approved records</td></tr>
+          <tr><td>Amount &gt; 100</td><td>Keeps big orders</td></tr>
+          <tr><td>DueDate &lt; utcNow()</td><td>Keeps overdue items</td></tr>
+          <tr><td>contains(Title, 'VIP')</td><td>Keeps VIP requests</td></tr>
+          <tr><td>Priority = High or Critical</td><td>Keeps urgent tickets</td></tr>
+          <tr><td>Email ne ''</td><td>Keeps items with an email</td></tr>
+        </tbody>
+      </table>
+      <div class="takeaway"><strong>💡 Tip:</strong> Save this screen. It's your quick lookup for the next 6 months.</div>
+    </div>
+
+    <!-- 12 — COMPARISON -->
+    <div class="slide" data-section="Explore">
+      <div class="step-label">12 — Quick comparison</div>
+      <h2>Select vs. Filter Array</h2>
+      <div class="compare-grid">
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front">
+            <div class="card-label cyan">Changes the shape</div>
+            <p>Every item stays. Each one gets a new shape.</p>
+          </div>
+          <div class="back">
+            <div class="card-label cyan">Select</div>
+            <h4>Reshapes</h4>
+            <p>Count stays the same. Fields change.</p>
+          </div>
+          <div class="flip-hint">Tap to flip →</div>
+        </div>
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front">
+            <div class="card-label">🔎 Filter Array</div>
+            <p>Tap to flip</p>
+          </div>
+          <div class="back">
+            <div class="card-label">Filter Array</div>
+            <h4>Removes</h4>
+            <p>Only matching items stay. Count gets shorter.</p>
+          </div>
+          <div class="flip-hint">Tap to flip →</div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> Select reshapes. Filter Array removes. Use both together for a clean list.</div>
+    </div>
+
+    <!-- 13 — USE CASE 1 -->
+    <div class="slide" data-section="Practice">
+      <div class="step-label">13 — Use case</div>
+      <h2>Keep only active records</h2>
+      <div class="usecase">
+        <div class="icon">✅</div>
+        <div>
+          <h4>The scenario</h4>
+          <p>You've pulled 200 items from a SharePoint list. 180 of them are closed. You only need the 20 open ones.</p>
+          <div class="rule">item()?['status'] ne 'Closed'</div>
+        </div>
+      </div>
+      <div class="card tint">
+        <div class="card-label">Result</div>
+        <p style="margin-bottom:0;">20 items. Loop runs 20 times instead of 200. <strong style="color:var(--green);">90% faster.</strong></p>
+      </div>
+    </div>
+
+    <!-- 14 — USE CASE 2 -->
+    <div class="slide" data-section="Practice">
+      <div class="step-label">14 — Use case</div>
+      <h2>Find items over a limit</h2>
+      <div class="usecase">
+        <div class="icon">💰</div>
+        <div>
+          <h4>The scenario</h4>
+          <p>You have a list of orders. You only want to alert the finance team about orders above $1,000.</p>
+          <div class="rule">item()?['amount'] gt 1000</div>
+        </div>
+      </div>
+      <div class="card tint">
+        <div class="card-label">Result</div>
+        <p style="margin-bottom:0;">Only large orders trigger an alert. No spam to finance. <strong style="color:var(--green);">Zero noise.</strong></p>
+      </div>
+    </div>
+
+    <!-- 15 — USE CASE 3 -->
+    <div class="slide" data-section="Practice">
+      <div class="step-label">15 — Use case</div>
+      <h2>Check if something exists</h2>
+      <div class="usecase">
+        <div class="icon">🔍</div>
+        <div>
+          <h4>The scenario</h4>
+          <p>You want to know if a user already exists in a list before creating a duplicate.</p>
+          <div class="rule">item()?['email'] eq 'user@company.com'</div>
+        </div>
+      </div>
+      <div class="card tint">
+        <div class="card-label">Then check</div>
+        <p style="margin-bottom:0;">Use <span class="pill">length(body('Filter_array'))</span>. If 0 → create. If 1+ → skip.</p>
+      </div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> Any time you say "only the ones where…", that's Filter Array.</div>
+    </div>
+
+    <!-- 16 — TRY IT YOURSELF -->
+    <div class="slide" data-section="Practice">
+      <div class="step-label">16 — Try it yourself</div>
+      <h2>Filter some orders</h2>
+      <p>Pick a minimum amount. Then run Filter Array on this list of 6 orders.</p>
+      <div class="tryit">
+        <label>Keep orders where amount is greater than</label>
+        <select id="minAmount">
+          <option value="50">$50</option>
+          <option value="100" selected>$100</option>
+          <option value="200">$200</option>
+          <option value="300">$300</option>
+        </select>
+        <button class="btn" onclick="runFilter()">▶ Run Filter Array</button>
+        <div class="result-table" id="resultTable">
+          <div class="row"><span>A-101</span><span>$40</span></div>
+          <div class="row"><span>A-102</span><span>$250</span></div>
+          <div class="row"><span>A-103</span><span>$90</span></div>
+          <div class="row"><span>A-104</span><span>$310</span></div>
+          <div class="row"><span>A-105</span><span>$130</span></div>
+          <div class="row"><span>A-106</span><span>$60</span></div>
+        </div>
+        <p id="resultMsg" style="margin-top:12px; font-size:13px; color:var(--text-dim);">Press "Run Filter Array" to see which orders stay.</p>
+      </div>
+    </div>
+
+    <!-- 17 — ADVANCED -->
+    <div class="slide" data-section="Master">
+      <div class="step-label">17 — Advanced</div>
+      <h2>Filtering nested items</h2>
+      <p>Sometimes the array contains nested objects. Here's how to reach into them.</p>
+      <div class="code-block">
+<span class="cm">// Item structure</span>
+{
+  <span class="str">"id"</span>: <span class="num">1</span>,
+  <span class="str">"title"</span>: <span class="str">"Order 1"</span>,
+  <span class="str">"meta"</span>: {
+    <span class="str">"priority"</span>: <span class="str">"high"</span>,
+    <span class="str">"tags"</span>: [<span class="str">"urgent"</span>, <span class="str">"vip"</span>]
+  }
+}
+
+<span class="cm">// Rule: filter where nested priority = 'high'</span>
+item()?[<span class="str">'meta'</span>]?[<span class="str">'priority'</span>] eq <span class="str">'high'</span>
+
+<span class="cm">// Rule: filter where tags contains 'vip'</span>
+<span class="fn">contains</span>(item()?[<span class="str">'meta'</span>]?[<span class="str">'tags'</span>], <span class="str">'vip'</span>)
+      </div>
+      <div class="takeaway"><strong>💡 Tip:</strong> Use the expression editor to test paths. Hover over the sample to see the actual output.</div>
+    </div>
+
+    <!-- 18 — PITFALLS -->
+    <div class="slide" data-section="Master">
+      <div class="step-label">18 — Learn from others</div>
+      <h2>Common pitfalls</h2>
+      <p>Tap a mistake to see why it trips beginners up.</p>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Comparing text to a number</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">If Amount is stored as text, a "greater than 100" check can give odd results. Make sure the field is really a number first.</div>
+      </div>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Text matches are case-sensitive</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">"Approved" and "approved" are not the same. Use <span class="pill">toLower()</span> on both sides before comparing.</div>
+      </div>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Forgetting the output is always an array</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">Even if only one item matches, the output is still an array. Wrap it in <span class="pill">first()</span> if you need a single item.</div>
+      </div>
+      <div class="accordion" onclick="toggleAcc(this)">
+        <div class="accordion-header"><span>Filtering after the loop instead of before</span><span class="arrow">▼</span></div>
+        <div class="accordion-body">If you filter inside an Apply to Each, you still loop through every item. Always filter BEFORE the loop.</div>
+      </div>
+    </div>
+
+    <!-- 19 — PERFORMANCE -->
+    <div class="slide" data-section="Master">
+      <div class="step-label">19 — Performance</div>
+      <h2>4 ways to make flows faster</h2>
+      <div class="card">
+        <div class="card-label green">1. Filter before you loop</div>
+        <p style="margin-bottom:0;">The most impactful change. Trim the array before Apply to Each.</p>
+      </div>
+      <div class="card">
+        <div class="card-label green">2. Replace Condition inside loops</div>
+        <p style="margin-bottom:0;">Instead of "If status = Approved" inside every iteration, pre-filter.</p>
+      </div>
+      <div class="card">
+        <div class="card-label green">3. Use length() for existence checks</div>
+        <p style="margin-bottom:0;">Don't loop to check if an item exists. Filter, then check length.</p>
+      </div>
+      <div class="card">
+        <div class="card-label green">4. Pre-filter source arrays</div>
+        <p style="margin-bottom:0;">If a "Get items" returns 500 rows, use OData filter at the source too.</p>
+      </div>
+    </div>
+
+    <!-- 20 — QUIZ -->
+    <div class="slide" data-section="Test">
+      <div class="step-label">20 — Quick check</div>
+      <h2>Does it stick?</h2>
+      <p>Five quick questions. Pick an answer to see if you're right.</p>
+
+      <div class="quiz-q">
+        <div class="question">1. What does Filter Array change?</div>
+        <div class="quiz-option" onclick="answer(this, false)">The shape of every item</div>
+        <div class="quiz-option" onclick="answer(this, true)">How many items are in the array</div>
+        <div class="quiz-option" onclick="answer(this, false)">The order of the fields</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">2. Nothing matches your rule. What does Filter Array return?</div>
+        <div class="quiz-option" onclick="answer(this, false)">An error</div>
+        <div class="quiz-option" onclick="answer(this, true)">An empty array</div>
+        <div class="quiz-option" onclick="answer(this, false)">The original array</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">3. When should you filter?</div>
+        <div class="quiz-option" onclick="answer(this, false)">After the loop</div>
+        <div class="quiz-option" onclick="answer(this, true)">Before the loop</div>
+        <div class="quiz-option" onclick="answer(this, false)">Inside the loop</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">4. What does <span class="pill">length(body('Filter_array'))</span> return?</div>
+        <div class="quiz-option" onclick="answer(this, true)">How many items passed</div>
+        <div class="quiz-option" onclick="answer(this, false)">The first item</div>
+        <div class="quiz-option" onclick="answer(this, false)">The last item</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">5. Select vs Filter Array — what's the difference?</div>
+        <div class="quiz-option" onclick="answer(this, false)">They do the same thing</div>
+        <div class="quiz-option" onclick="answer(this, true)">Select reshapes, Filter removes</div>
+        <div class="quiz-option" onclick="answer(this, false)">Select removes, Filter reshapes</div>
+      </div>
+    </div>
+
+    <!-- 21 — CHEAT SHEET -->
+    <div class="slide" data-section="Test">
+      <div class="step-label">21 — Cheat sheet</div>
+      <h2>Save this for later</h2>
+      <div class="cheat-sheet">
+        <div class="title">FILTER ARRAY — QUICK REFERENCE</div>
+
+        <div class="section-label">CORE FIELDS</div>
+        <div class="row"><span class="key">FROM</span><span class="val">outputs('Get_items')</span></div>
+        <div class="row"><span class="key">RULE</span><span class="val">item()?['field'] OPERATOR value</span></div>
+        <div class="row"><span class="key">OUTPUT</span><span class="val">body('Filter_array') — always array</span></div>
+        <div class="row"><span class="key">COUNT</span><span class="val">length(body('Filter_array'))</span></div>
+        <div class="row"><span class="key">FIRST</span><span class="val">first(body('Filter_array'))</span></div>
+
+        <div class="divider"></div>
+
+        <div class="section-label">OPERATORS</div>
+        <div class="row"><span class="key">eq / ne</span><span class="val">equals / not equals</span></div>
+        <div class="row"><span class="key">gt / lt</span><span class="val">greater / less than</span></div>
+        <div class="row"><span class="key">contains()</span><span class="val">substring match</span></div>
+        <div class="row"><span class="key">startsWith()</span><span class="val">prefix match</span></div>
+        <div class="row"><span class="key">and() / or()</span><span class="val">combine rules</span></div>
+
+        <div class="divider"></div>
+
+        <div class="section-label">REMEMBER</div>
+        <div class="row"><span class="key">Filter BEFORE loop</span></div>
+        <div class="row"><span class="key">Output is always an array</span></div>
+        <div class="row"><span class="key">Empty result = empty array</span></div>
+      </div>
+    </div>
+
+    <!-- 22 — RECAP -->
+    <div class="slide" data-section="Test">
+      <div class="step-label">Recap</div>
+      <h2>What you now know</h2>
+      <div class="card tint">
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body"><strong>Filter Array</strong> keeps only the items that pass a rule, in one action, with no loop.</div>
+        </div>
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body">It needs a <strong>From</strong> array and a <strong>Condition</strong>. Use <span class="pill">item()</span> for conditions.</div>
+        </div>
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body">The output is always an array. Use <span class="pill">length()</span> to count the matches.</div>
+        </div>
+        <div class="recap-item">
+          <div class="check">✔</div>
+          <div class="body"><strong>Select</strong> reshapes items. <strong>Filter Array</strong> removes items. Filter before you loop.</div>
+        </div>
+        <div class="recap-item" style="margin-bottom:0;">
+          <div class="check">✔</div>
+          <div class="body">Any time you say <em>"only the ones where…"</em>, you're using Filter Array.</div>
+        </div>
+      </div>
+
+      <div class="takeaway" style="margin-top:22px;">
+        <strong>Up next Share:</strong> The Select action — reshaping arrays without loops. Same it lesson format. Same depth.
+      with </div>
+
+      <div class="takeaway" style="background:linear-gradient(135deg, rgba(236,72,153,.1), rgba(34,211,238,.06)); border-left-color: var(--accent); color:#fbcfe8;">
+        <strong>Built as a self-contained lesson</strong> — no account or setup needed. anyone learning Power Automate.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn" id="prevBtn" onclick="prevSlide()">← Prev</button>
+    <div class="nav-center"><span class="section-name" id="sectionName">Learn</span> <span id="slideCounter">1 / 22</span></div>
+    <button class="nav-btn" id="nextBtn" onclick="nextSlide()">Next →</button>
+  </div>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const progressFill = document.getElementById('progressFill');
+const slideCounter = document.getElementById('slideCounter');
+const sectionName = document.getElementById('sectionName');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const slidesContainer = document.getElementById('slidesContainer');
+
+let current = 0;
+const total = slides.length;
+
+function updateUI() {
+  progressFill.style.width = `${((current + 1) / total) * 100}%`;
+  slideCounter.textContent = `${current + 1} / ${total}`;
+  sectionName.textContent = slides[current].dataset.section || '';
+  prevBtn.disabled = current === 0;
+  nextBtn.textContent = current === total - 1 ? '↻ Restart' : 'Next →';
+}
+
+function showSlide(i) {
+  slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(i, total - 1));
+  slides[current].classList.add('active');
+  slidesContainer.scrollTop = 0;
+  updateUI();
+}
+
+function nextSlide() {
+  if (current === total - 1) showSlide(0);
+  else showSlide(current + 1);
+}
+function prevSlide() { showSlide(current - 1); }
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevSlide(); }
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+// ACCORDION
+function toggleAcc(el) { el.classList.toggle('open'); }
+
+// ANATOMY
+const anatomyData = {
+  1: '<strong>📥 From:</strong> The array you want to filter. Usually the output of "Get items" or an HTTP action.',
+  2: '<strong>🎯 Rule:</strong> The condition that decides which items stay. <span class="pill">item()</span> refers to the current item being evaluated.',
+  3: '<strong>📤 Output:</strong> The filtered array. Use <span class="pill">body(\'Filter_array\')</span> to reference it in later actions.',
+  4: '<strong>🔢 Count:</strong> How many items passed the rule. Use <span class="pill">length()</span> to get the number.'
+};
+document.querySelectorAll('.anatomy-row').forEach(row => {
+  row.addEventListener('click', () => {
+    document.querySelectorAll('.anatomy-row').forEach(r => r.classList.remove('active'));
+    row.classList.add('active');
+    document.getElementById('anatomyDetail').innerHTML = anatomyData[row.dataset.anatomy];
+  });
+});
+
+// TRY IT
+const orders = [
+  { id: 'A-101', amount: 40 },
+  { id: 'A-102', amount: 250 },
+  { id: 'A-103', amount: 90 },
+  { id: 'A-104', amount: 310 },
+  { id: 'A-105', amount: 130 },
+  { id: 'A-106', amount: 60 }
+];
+function runFilter() {
+  const min = parseInt(document.getElementById('minAmount').value);
+  const table = document.getElementById('resultTable');
+  const msg = document.getElementById('resultMsg');
+  table.innerHTML = '';
+  let count = 0;
+  orders.forEach(o => {
+    const hit = o.amount > min;
+    if (hit) count++;
+    const row = document.createElement('div');
+    row.className = 'row ' + (hit ? 'hit' : 'miss');
+    row.innerHTML = `<span>${o.id}${hit ? ' ✅' : ''}</span><span>$${o.amount}</span>`;
+    table.appendChild(row);
+  });
+  msg.innerHTML = `<strong>${count}</strong> of ${orders.length} orders passed the rule. Output is an array of ${count} item${count !== 1 ? 's' : ''}.`;
+}
+
+// QUIZ
+function answer(el, correct) {
+  const parent = el.parentElement;
+  if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  parent.querySelectorAll('.quiz-option').forEach(opt => opt.classList.add('disabled'));
+  if (!correct) {
+    parent.querySelectorAll('.quiz-option').forEach(opt => {
+      if (opt.getAttribute('onclick').includes('true')) opt.classList.add('correct');
+    });
+  }
+}
+
+// PENCIL / FULLSCREEN
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const drawToggle = document.getElementById('drawToggle');
+const clearDraw = document.getElementById('clearDraw');
+const fullscreenToggle = document.getElementById('fullscreenToggle');
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+canvas.addEventListener('pointerdown', e => { if (!isDrawMode) return; isDrawing = true; lastX = e.clientX; lastY = e.clientY; });
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(e.clientX, e.clientY); ctx.stroke();
+  lastX = e.clientX; lastY = e.clientY;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt => canvas.addEventListener(evt, () => isDrawing = false));
+
+drawToggle.onclick = () => {
+  isDrawMode = !isDrawMode;
+  canvas.classList.toggle('draw-active', isDrawMode);
+  drawToggle.textContent = isDrawMode ? '✏️ On' : '✏️ Pencil';
+};
+clearDraw.onclick = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+fullscreenToggle.onclick = toggleFullscreen;
+
+// INIT
+updateUI();
+</script>
+</body>
+</html>

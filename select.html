@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select — Power Automate, from zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+
+:root {
+  --bg: #0a0511;
+  --card: #17111f;
+  --card-2: #1e1729;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+  --accent: #22d3ee;
+  --accent-2: #ec4899;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.topbar .icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #67e8f9, #ec4899);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-right: 12px;
+}
+.topbar .title { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.topbar .subtitle { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.topbar .actions { display: flex; gap: 14px; color: var(--text-dim); font-size: 20px; }
+
+.progress-track {
+  height: 3px;
+  background: rgba(255,255,255,.05);
+  margin: 0 24px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.progress-track .fill {
+  height: 100%;
+  width: 4%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .4s ease;
+}
+
+.slides {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  -webkit-overflow-scrolling: touch;
+}
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #4a3a55; border-radius: 6px; }
+
+.slide { display: none; animation: fadeUp .4s ease; }
+.slide.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+h2 { font-size: 26px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+h4 { font-size: 17px; margin-bottom: 10px; }
+p { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin-bottom: 14px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.card.tint { background: var(--card-2); }
+.card-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.card-label.pink { color: var(--accent-2); }
+.card-label.green { color: var(--green); }
+.card-label.yellow { color: var(--yellow); }
+
+.pill {
+  display: inline-block;
+  background: rgba(255,255,255,.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  margin: 0 2px;
+}
+
+.recap-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+.recap-item .check { color: var(--green); font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+.recap-item .body { flex: 1; }
+
+.accordion {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .2s;
+}
+.accordion:hover { background: var(--card-2); }
+.accordion-header {
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+.accordion-header .arrow { color: var(--text-dim); transition: transform .3s; font-size: 14px; }
+.accordion.open .accordion-header .arrow { transform: rotate(180deg); }
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s, padding .3s;
+  padding: 0 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.accordion.open .accordion-body { max-height: 400px; padding: 0 20px 20px; }
+
+.anatomy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-2);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: border-color .3s;
+  cursor: pointer;
+}
+.anatomy-row.active { border-color: var(--accent); }
+.anatomy-row .left { font-size: 14px; }
+.anatomy-row .dot {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  color: #042f2e;
+  flex-shrink: 0;
+}
+.anatomy-detail {
+  background: var(--card-2);
+  border-radius: 14px;
+  padding: 16px 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+.flow-mock { background: var(--card-2); border-radius: 16px; padding: 20px; margin: 16px 0; }
+.flow-action {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+.flow-action.pink { border-left-color: var(--accent-2); }
+.flow-action.green { border-left-color: var(--green); }
+.flow-action .icon { font-size: 20px; }
+.flow-action .name { font-weight: 600; font-size: 14px; }
+.flow-action .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+.tryit { background: var(--card); border-radius: 20px; padding: 22px; }
+.tryit select, .tryit input {
+  width: 100%;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.btn {
+  background: var(--accent);
+  color: #042f2e;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .15s;
+  width: 100%;
+}
+.btn:hover { transform: scale(1.02); }
+
+.result-table { margin-top: 16px; font-size: 14px; }
+.result-table .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.result-table .row:last-child { border-bottom: none; }
+.result-table .row.hit { color: var(--green); font-weight: 600; }
+
+.quiz-q { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+.quiz-q .question { font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+.quiz-option {
+  background: var(--card-2);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.quiz-option:hover { border-color: rgba(255,255,255,.15); }
+.quiz-option.correct { background: rgba(74,222,128,.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; opacity: .6; }
+
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+.flip-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 180px;
+  cursor: pointer;
+  position: relative;
+  transition: all .3s;
+  border: 1px solid var(--border);
+}
+.flip-card .front, .flip-card .back { transition: opacity .3s; }
+.flip-card .back { display: none; opacity: 0; }
+.flip-card.flipped .front { display: none; }
+.flip-card.flipped .back { display: block; opacity: 1; }
+.flip-card .card-label { color: var(--accent); }
+.flip-card.flipped .card-label { color: var(--accent-2); }
+.flip-card p { font-size: 13px; margin-bottom: 0; }
+.flip-hint { position: absolute; bottom: 12px; right: 16px; font-size: 11px; color: var(--text-dim); }
+
+.takeaway {
+  background: linear-gradient(135deg, rgba(74,222,128,.12), rgba(34,211,238,.08));
+  border-left: 4px solid var(--green);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d1fae5;
+}
+.takeaway strong { color: white; font-weight: 700; }
+
+/* ---------- BOTTOM NAV ---------- */
+.bottom-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 22px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 8px;
+  background: var(--bg);
+  position: relative;
+  z-index: 200;
+}
+
+.nav-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.nav-btn:hover { background: var(--card-2); }
+.nav-btn:active { transform: scale(.94); }
+.nav-btn.primary { background: var(--accent); border-color: var(--accent); color: #042f2e; font-weight: 700; }
+.nav-btn.primary:hover { background: #06b6d4; }
+.nav-btn.active-tool {
+  background: rgba(251,191,36,.18);
+  border-color: rgba(251,191,36,.55);
+  color: #fbbf24;
+}
+
+.nav-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.nav-dots { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #3f344d;
+  cursor: pointer;
+  transition: all .3s;
+}
+.nav-dot.active { background: var(--accent); width: 16px; border-radius: 4px; }
+
+/* ---------- CANVAS (behind nav) ---------- */
+#annotationLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  touch-action: none;
+}
+#annotationLayer.draw-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+@media (max-width: 480px) {
+  h2 { font-size: 21px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .app { max-width: 100%; }
+  .nav-btn { width: 38px; height: 38px; font-size: 15px; }
+  .nav-label { font-size: 9px; }
+  .nav-dots { gap: 3px; }
+  .nav-dot { width: 5px; height: 5px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex; align-items:center;">
+      <div class="icon">🎯</div>
+      <div>
+        <div class="title">Power Automate, from zero</div>
+        <div class="subtitle">Lesson: Select Action</div>
+      </div>
+    </div>
+    <div class="actions">
+      <span>💬</span>
+      <span>↗</span>
+    </div>
+  </div>
+
+  <div class="progress-track"><div class="fill" id="progressFill"></div></div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- 01 -->
+    <div class="slide active">
+      <div class="step-label">01 — What you'll learn</div>
+      <h2>Select in Power Automate</h2>
+      <p>Select reshapes every item in an array — in one action, with no loop.</p>
+      <div class="card tint">
+        <div class="card-label">By the end</div>
+        <p style="margin-bottom:0;">You'll know what Select does, how to reshape arrays, how it compares to Filter Array, and how to avoid the mistakes most beginners make.</p>
+      </div>
+      <div class="takeaway"><strong>💡 Goal:</strong> Replace slow Apply to Each loops with one clean Select action.</div>
+    </div>
+
+    <!-- 02 -->
+    <div class="slide">
+      <div class="step-label">02 — What it is</div>
+      <h2>Change the shape, not the count</h2>
+      <p>Select takes an array and gives each item a new shape — smaller, renamed, or combined fields.</p>
+      <div class="card">
+        <div class="card-label">Input</div>
+        <p style="margin-bottom:8px;">Array of items with many fields</p>
+        <div class="card-label pink">Output</div>
+        <p style="margin-bottom:0;">Same count, fewer fields per item</p>
+      </div>
+      <div class="takeaway"><strong>💡 Takeaway:</strong> Select reshapes. The number of items never changes.</div>
+    </div>
+
+    <!-- 03 -->
+    <div class="slide">
+      <div class="step-label">03 — Simple example</div>
+      <h2>From 5 fields to 2</h2>
+      <div class="card">
+        <div class="card-label">Before — 5 fields each</div>
+        <p style="margin-bottom:0;"><span class="pill">id</span> <span class="pill">name</span> <span class="pill">email</span> <span class="pill">phone</span> <span class="pill">city</span></p>
+      </div>
+      <div class="card">
+        <div class="card-label pink">After — 2 fields each</div>
+        <p style="margin-bottom:0;"><span class="pill">id</span> <span class="pill">name</span></p>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Same number of items. Each one carries less data.</div>
+    </div>
+
+    <!-- 04 -->
+    <div class="slide">
+      <div class="step-label">04 — Why it matters</div>
+      <h2>Faster flows, cleaner data</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:1.8; font-size:15px;">
+        <li>Smaller payloads = faster flows</li>
+        <li>Only relevant fields downstream</li>
+        <li>Readable outputs in run history</li>
+        <li>Great for building CSV or HTML tables</li>
+      </ul>
+      <div class="takeaway"><strong>💡</strong> Select is how you send clean data to the next step.</div>
+    </div>
+
+    <!-- 05 -->
+    <div class="slide">
+      <div class="step-label">05 — Anatomy</div>
+      <h2>The anatomy of Select</h2>
+      <p>Tap a numbered dot to see what each part does.</p>
+
+      <div class="anatomy-row" data-anatomy="1"><div class="left">📥 From: <span class="pill">outputs('Get_items')</span></div><div class="dot">1</div></div>
+      <div class="anatomy-row" data-anatomy="2"><div class="left">🗺️ Map: key <span class="pill">id</span> → value <span class="pill">item()?['ID']</span></div><div class="dot">2</div></div>
+      <div class="anatomy-row" data-anatomy="3"><div class="left">🎯 Map: key <span class="pill">name</span> → value <span class="pill">item()?['Title']</span></div><div class="dot">3</div></div>
+      <div class="anatomy-row" data-anatomy="4"><div class="left">📤 Output: <span class="pill">body('Select')</span></div><div class="dot">4</div></div>
+
+      <div class="anatomy-detail" id="anatomyDetail">Tap a numbered dot above.</div>
+      <div class="takeaway"><strong>💡</strong> The map section is where the real magic happens — you rename and choose fields.</div>
+    </div>
+
+    <!-- 06 -->
+    <div class="slide">
+      <div class="step-label">06 — Map basics</div>
+      <h2>Left side = new name, right side = old value</h2>
+      <div class="card">
+        <div class="card-label">Map row</div>
+        <p style="margin-bottom:0;"><span class="pill">OrderID</span> → <span class="pill">item()?['id']</span></p>
+      </div>
+      <div class="card">
+        <div class="card-label pink">Map row</div>
+        <p style="margin-bottom:0;"><span class="pill">Customer</span> → <span class="pill">item()?['name']</span></p>
+      </div>
+      <div class="takeaway"><strong>💡</strong> You can rename fields freely — the source is untouched.</div>
+    </div>
+
+    <!-- 07 -->
+    <div class="slide">
+      <div class="step-label">07 — Renaming</div>
+      <h2>Rename fields on the fly</h2>
+      <p>SharePoint gives you <span class="pill">Title</span>. Your API expects <span class="pill">name</span>. Select bridges them.</p>
+      <div class="takeaway"><strong>💡</strong> Match your target system without touching the source.</div>
+    </div>
+
+    <!-- 08 -->
+    <div class="slide">
+      <div class="step-label">08 — Combining fields</div>
+      <h2>Build new values</h2>
+      <p>Combine first + last name into one field:</p>
+      <div class="card"><p style="margin-bottom:0;"><span class="pill">FullName</span> → <span class="pill">concat(item()?['first'], ' ', item()?['last'])</span></p></div>
+      <div class="takeaway"><strong>💡</strong> Select is not just picking — it's reshaping.</div>
+    </div>
+
+    <!-- 09 -->
+    <div class="slide">
+      <div class="step-label">09 — In the designer</div>
+      <h2>Real flow, real steps</h2>
+      <div class="flow-mock">
+        <div class="flow-action"><div class="icon">📋</div><div><div class="name">Get items</div><div class="meta">SharePoint — Contacts</div></div></div>
+        <div class="flow-action"><div class="icon">🎯</div><div><div class="name">Select</div><div class="meta">Map id → ID, name → Title</div></div></div>
+        <div class="flow-action green"><div class="icon">📧</div><div><div class="name">Send email</div><div class="meta">Using reshaped data</div></div></div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Select sits between your source and your consumer.</div>
+    </div>
+
+    <!-- 10 -->
+    <div class="slide">
+      <div class="step-label">10 — Use case: CSV</div>
+      <h2>Build CSV output</h2>
+      <p>Select → Create CSV table. Clean rows with only the columns you want.</p>
+      <div class="takeaway"><strong>💡</strong> Skip Select, and your CSV will have every SharePoint field.</div>
+    </div>
+
+    <!-- 11 -->
+    <div class="slide">
+      <div class="step-label">11 — Use case: HTML</div>
+      <h2>Build HTML tables</h2>
+      <p>Select → Create HTML table. Your email table looks professional, not cluttered.</p>
+      <div class="takeaway"><strong>💡</strong> Pick the fields your reader actually needs.</div>
+    </div>
+
+    <!-- 12 -->
+    <div class="slide">
+      <div class="step-label">12 — Use case: API payload</div>
+      <h2>Trim before sending</h2>
+      <p>APIs reject unknown fields. Select only the fields the API expects.</p>
+      <div class="takeaway"><strong>💡</strong> Match the schema. Don't guess.</div>
+    </div>
+
+    <!-- 13 -->
+    <div class="slide">
+      <div class="step-label">13 — Use case: dashboards</div>
+      <h2>Feed Power BI</h2>
+      <p>Select reshapes data into a flat, predictable table — perfect for reporting.</p>
+      <div class="takeaway"><strong>💡</strong> Predictable fields = predictable dashboards.</div>
+    </div>
+
+    <!-- 14 -->
+    <div class="slide">
+      <div class="step-label">14 — Comparison</div>
+      <h2>Select vs Filter Array</h2>
+      <div class="compare-grid">
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front"><div class="card-label">Changes the shape</div><p>Every item stays. Each one gets a new shape.</p></div>
+          <div class="back"><div class="card-label">Select</div><h4>Reshapes</h4><p>Count stays the same. Fields change.</p></div>
+          <div class="flip-hint">Tap →</div>
+        </div>
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front"><div class="card-label" style="color:var(--accent-2);">Changes the count</div><p>Some items go away. The list gets shorter.</p></div>
+          <div class="back"><div class="card-label" style="color:var(--accent-2);">Filter Array</div><h4>Removes</h4><p>Only matching items stay.</p></div>
+          <div class="flip-hint">Tap →</div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Select reshapes. Filter Array removes. Use both for clean data.</div>
+    </div>
+
+    <!-- 15 -->
+    <div class="slide">
+      <div class="step-label">15 — Try it</div>
+      <h2>Reshape a list of contacts</h2>
+      <p>Pick which fields to keep. Then run Select.</p>
+      <div class="tryit">
+        <label style="font-size:13px; color:var(--text-dim);">Keep fields</label>
+        <select id="fieldSet">
+          <option value="id,name">id, name</option>
+          <option value="id,name,email">id, name, email</option>
+          <option value="name,email">name, email</option>
+        </select>
+        <button class="btn" onclick="runSelect()">▶ Run Select</button>
+        <div class="result-table" id="selectResult"></div>
+        <p id="selectMsg" style="margin-top:14px; font-size:13px; color:var(--text-dim);">Press Run to see the reshaped array.</p>
+      </div>
+    </div>
+
+    <!-- 16 -->
+    <div class="slide">
+      <div class="step-label">16 — Practice</div>
+      <h2>Rename for the target</h2>
+      <p>SharePoint gives you <span class="pill">Title</span>. The API wants <span class="pill">name</span>. What map row do you write?</p>
+      <div class="card"><div class="card-label">Answer</div><p style="margin-bottom:0;"><span class="pill">name</span> → <span class="pill">item()?['Title']</span></p></div>
+      <div class="takeaway"><strong>💡</strong> Left side is always the new name.</div>
+    </div>
+
+    <!-- 17 -->
+    <div class="slide">
+      <div class="step-label">17 — Practice</div>
+      <h2>Combine two fields</h2>
+      <p>Create one field called <span class="pill">FullName</span> from <span class="pill">first</span> and <span class="pill">last</span>.</p>
+      <div class="card"><div class="card-label">Answer</div><p style="margin-bottom:0;"><span class="pill">FullName</span> → <span class="pill">concat(item()?['first'], ' ', item()?['last'])</span></p></div>
+    </div>
+
+    <!-- 18 -->
+    <div class="slide">
+      <div class="step-label">18 — Pitfalls</div>
+      <h2>Common mistakes</h2>
+      <p>Tap a mistake to see why it trips beginners up.</p>
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Confusing Select with Filter Array</span><span class="arrow">▼</span></div><div class="accordion-body">Select keeps every item — it only changes the shape. Filter Array removes items.</div></div>
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Forgetting the Map section</span><span class="arrow">▼</span></div><div class="accordion-body">Without map entries, Select returns an empty array. Every field you want must be mapped.</div></div>
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Using item() outside an array context</span><span class="arrow">▼</span></div><div class="accordion-body"><span class="pill">item()</span> only works inside Select. Outside, you'll get errors.</div></div>
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Wrong case in field names</span><span class="arrow">▼</span></div><div class="accordion-body">JSON is case-sensitive. <span class="pill">ID</span> and <span class="pill">id</span> are different.</div></div>
+    </div>
+
+    <!-- 19 -->
+    <div class="slide">
+      <div class="step-label">19 — Best practices</div>
+      <h2>Write clean Select actions</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:1.8; font-size:15px;">
+        <li>Map only the fields you need</li>
+        <li>Use clear names on the left side</li>
+        <li>Keep the source untouched</li>
+        <li>Test with real data</li>
+        <li>Document what each Select produces</li>
+      </ul>
+      <div class="takeaway"><strong>💡</strong> A clean Select means a clean flow.</div>
+    </div>
+
+    <!-- 20 -->
+    <div class="slide">
+      <div class="step-label">20 — Advanced</div>
+      <h2>Select on nested data</h2>
+      <p>You can map nested properties. Example: pull <span class="pill">item()?['address']?['city']</span> into a flat field.</p>
+      <div class="takeaway"><strong>💡</strong> Flatten before you loop.</div>
+    </div>
+
+    <!-- 21 -->
+    <div class="slide">
+      <div class="step-label">21 — Performance</div>
+      <h2>Why it's fast</h2>
+      <p>Select runs in a single pass. No per-item flow action. No concurrency setup. No rate limit risk.</p>
+      <div class="takeaway"><strong>💡</strong> One step beats 500 loop iterations.</div>
+    </div>
+
+    <!-- 22 -->
+    <div class="slide">
+      <div class="step-label">22 — Real scenario</div>
+      <h2>SharePoint → Teams card</h2>
+      <p>Select reshapes items into the exact fields the Teams adaptive card needs.</p>
+      <div class="takeaway"><strong>💡</strong> Design the card. Then Select the fields to match.</div>
+    </div>
+
+    <!-- 23 -->
+    <div class="slide">
+      <div class="step-label">23 — Quiz</div>
+      <h2>Does it stick?</h2>
+      <div class="quiz-q">
+        <div class="question">1. What does Select change?</div>
+        <div class="quiz-option" onclick="answer(this, true)">The shape of every item</div>
+        <div class="quiz-option" onclick="answer(this, false)">The count of items</div>
+        <div class="quiz-option" onclick="answer(this, false)">The order of the fields</div>
+      </div>
+      <div class="quiz-q">
+        <div class="question">2. What does item() refer to?</div>
+        <div class="quiz-option" onclick="answer(this, false)">The whole array</div>
+        <div class="quiz-option" onclick="answer(this, true)">The current item being reshaped</div>
+        <div class="quiz-option" onclick="answer(this, false)">The output of the previous action</div>
+      </div>
+      <div class="quiz-q">
+        <div class="question">3. Select vs Filter Array?</div>
+        <div class="quiz-option" onclick="answer(this, false)">Both remove items</div>
+        <div class="quiz-option" onclick="answer(this, true)">Select reshapes, Filter removes</div>
+        <div class="quiz-option" onclick="answer(this, false)">They do the same thing</div>
+      </div>
+    </div>
+
+    <!-- 24 -->
+    <div class="slide">
+      <div class="step-label">24 — Cheat sheet</div>
+      <h2>Quick reference</h2>
+      <div class="card"><div class="card-label">Basic pick</div><p style="margin-bottom:0;"><span class="pill">name</span> → <span class="pill">item()?['Title']</span></p></div>
+      <div class="card"><div class="card-label pink">Rename</div><p style="margin-bottom:0;"><span class="pill">OrderID</span> → <span class="pill">item()?['id']</span></p></div>
+      <div class="card"><div class="card-label green">Combine</div><p style="margin-bottom:0;"><span class="pill">Full</span> → <span class="pill">concat(item()?['first'], ' ', item()?['last'])</span></p></div>
+      <div class="card"><div class="card-label yellow">Nested</div><p style="margin-bottom:0;"><span class="pill">City</span> → <span class="pill">item()?['address']?['city']</span></p></div>
+    </div>
+
+    <!-- 25 -->
+    <div class="slide">
+      <div class="step-label">Recap</div>
+      <h2>What you now know</h2>
+      <div class="card tint">
+        <div class="recap-item"><div class="check">✔</div><div class="body"><strong>Select</strong> reshapes every item — same count, new shape.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">It needs a <strong>From</strong> array and a <strong>Map</strong> section.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">You can <strong>rename</strong>, <strong>combine</strong>, and <strong>flatten</strong> fields.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body"><strong>Filter Array</strong> removes items. <strong>Select</strong> reshapes them.</div></div>
+        <div class="recap-item" style="margin-bottom:0;"><div class="check">✔</div><div class="body">One Select beats 500 loop iterations.</div></div>
+      </div>
+      <div class="takeaway"><strong>Next lesson:</strong> Parse JSON — turn raw API responses into usable fields.</div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous">←</button>
+    <button class="nav-btn" id="clearBtn" aria-label="Clear drawing">🧹</button>
+    <button class="nav-btn" id="pencilBtn" aria-label="Toggle pencil">✏️</button>
+    <div class="nav-center">
+      <div class="nav-label" id="navLabel">Intro</div>
+      <div class="nav-dots" id="navDots"></div>
+    </div>
+    <button class="nav-btn" id="fullscreenBtn" aria-label="Fullscreen">⛶</button>
+    <button class="nav-btn primary" id="nextBtn" aria-label="Next">→</button>
+  </div>
+</div>
+
+<script>
+// ---------- SLIDES ----------
+const slides = document.querySelectorAll('.slide');
+const navDots = document.getElementById('navDots');
+const navLabel = document.getElementById('navLabel');
+const progressFill = document.getElementById('progressFill');
+const slidesContainer = document.getElementById('slidesContainer');
+const stepLabels = [
+  'Intro','Concept','Example','Why','Anatomy',
+  'Map','Rename','Combine','Designer','CSV',
+  'HTML','API','Dashboards','Compare','Try it',
+  'Practice 1','Practice 2','Pitfalls','Best practice','Advanced',
+  'Performance','Scenario','Quiz','Cheatsheet','Recap'
+];
+let current = 0;
+
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => showSlide(i);
+  navDots.appendChild(d);
+});
+
+function showSlide(i) {
+  slides[current].classList.remove('active');
+  navDots.children[current].classList.remove('active');
+  current = Math.max(0, Math.min(i, slides.length - 1));
+  slides[current].classList.add('active');
+  navDots.children[current].classList.add('active');
+  navLabel.textContent = stepLabels[current] || '';
+  progressFill.style.width = `${((current + 1) / slides.length) * 100}%`;
+  slidesContainer.scrollTop = 0;
+  clearAnnotations();
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => showSlide(current + 1));
+document.getElementById('prevBtn').addEventListener('click', () => showSlide(current - 1));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showSlide(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') showSlide(current - 1);
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+// ---------- ACCORDION ----------
+function toggleAcc(el) { el.classList.toggle('open'); }
+
+// ---------- ANATOMY ----------
+const anatomyData = {
+  1: '<strong>📥 From:</strong> The array you want to reshape. Usually output of "Get items" or HTTP.',
+  2: '<strong>🗺️ Map id:</strong> New key <span class="pill">id</span> maps to original <span class="pill">item()?[\'ID\']</span>.',
+  3: '<strong>🗺️ Map name:</strong> New key <span class="pill">name</span> maps to original <span class="pill">item()?[\'Title\']</span>.',
+  4: '<strong>📤 Output:</strong> The reshaped array. Use <span class="pill">body(\'Select\')</span> downstream.'
+};
+document.querySelectorAll('.anatomy-row').forEach(row => {
+  row.addEventListener('click', () => {
+    document.querySelectorAll('.anatomy-row').forEach(r => r.classList.remove('active'));
+    row.classList.add('active');
+    document.getElementById('anatomyDetail').innerHTML = anatomyData[row.dataset.anatomy];
+  });
+});
+
+// ---------- TRY IT (Select Sandbox) ----------
+const contacts = [
+  { id: 1, name: 'Alice', email: 'alice@example.com' },
+  { id: 2, name: 'Bob', email: 'bob@example.com' },
+  { id: 3, name: 'Cara', email: 'cara@example.com' }
+];
+
+function runSelect() {
+  const fields = document.getElementById('fieldSet').value.split(',');
+  const out = document.getElementById('selectResult');
+  out.innerHTML = '';
+  contacts.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'row hit';
+    row.textContent = fields.map(f => c[f]).join(' · ');
+    out.appendChild(row);
+  });
+  document.getElementById('selectMsg').innerHTML = `Selected ${fields.length} fields from ${contacts.length} items. Same count — new shape.`;
+}
+
+// ---------- QUIZ ----------
+function answer(el, correct) {
+  const parent = el.parentElement;
+  if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  parent.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+  if (!correct) {
+    parent.querySelectorAll('.quiz-option').forEach(o => {
+      if (o.getAttribute('onclick').includes('true')) o.classList.add('correct');
+    });
+  }
+}
+
+// ---------- PENCIL + FULLSCREEN (FIXED) ----------
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const pencilBtn = document.getElementById('pencilBtn');
+const clearBtn = document.getElementById('clearBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+// --- Critical fix: only draw when target is canvas ---
+canvas.addEventListener('pointerdown', e => {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(e.clientX, e.clientY); ctx.stroke();
+  lastX = e.clientX; lastY = e.clientY;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt =>
+  canvas.addEventListener(evt, () => isDrawing = false)
+);
+
+// --- Pencil toggle: fixed (works both ways) ---
+pencilBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  isDrawMode = !isDrawMode;
+  canvas.classList.toggle('draw-active', isDrawMode);
+  pencilBtn.classList.toggle('active-tool', isDrawMode);
+  isDrawing = false;
+});
+
+// --- Clear ---
+function clearAnnotations() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+clearBtn.addEventListener('click', (e) => { e.stopPropagation(); clearAnnotations(); });
+
+// --- Fullscreen with iPad fallback ---
+function toggleFullscreen() {
+  const el = document.documentElement;
+  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!isFull) {
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+fullscreenBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFullscreen(); });
+
+// ---------- INIT ----------
+showSlide(0);
+</script>
+</body>
+</html>
