@@ -2,280 +2,1563 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Child Flows in Power Automate</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Child Flows in Power Automate — Complete Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
-body {
-  overflow:hidden; color:white;
-  background:
-    radial-gradient(circle at top left, rgba(139,92,246,.85) 0%, transparent 35%),
-    radial-gradient(circle at top right, rgba(217,70,239,.85) 0%, transparent 35%),
-    radial-gradient(circle at bottom, rgba(244,63,94,.7) 0%, transparent 30%),
-    #0a0212;
-  animation: bgMove 12s ease infinite alternate;
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Inter',sans-serif; }
+
+:root {
+  --bg: #061414;
+  --paper: #0d1c1e;
+  --paper-2: #122528;
+  --border: rgba(255,255,255,.08);
+  --text: #eef5f5;
+  --text-dim: #93a8a8;
+
+  --pa-bg: #f3f2f1;
+  --pa-canvas: #faf9f8;
+  --pa-card: #ffffff;
+  --pa-text: #201f1e;
+  --pa-text-dim: #605e5c;
+  --pa-border: #edebe9;
+
+  --trigger: #0078d4;
+  --control: #8764b8;
+  --data: #107c10;
+  --http: #038387;
+  --error: #d13438;
+
+  --accent: #14b8a6;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --teal: #2dd4bf;
+  --emerald: #34d399;
+  --blue: #60a5fa;
 }
-@keyframes bgMove { from{filter:hue-rotate(0deg);} to{filter:hue-rotate(30deg);} }
-.slider { position:relative; width:100vw; height:100vh; }
-.slide { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; padding:30px; opacity:0; transform:scale(.95) translateY(25px); transition:.8s ease; pointer-events:none; }
-.slide.active { opacity:1; transform:scale(1) translateY(0); pointer-events:auto; }
 
-.slide[data-theme="purple"] .card { border-color:rgba(139,92,246,.35); box-shadow:0 30px 80px rgba(139,92,246,.25), inset 0 1px 0 rgba(255,255,255,.15); }
-.slide[data-theme="purple"] .slide-number { color:#a78bfa; }
-.slide[data-theme="purple"] h1 { background:linear-gradient(90deg,#8b5cf6,#d946ef,#f43f5e,#8b5cf6); background-size:300%; background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.slide[data-theme="purple"] .badge { background:rgba(139,92,246,.12); color:#c4b5fd; border-color:rgba(139,92,246,.3); }
-.slide[data-theme="purple"] .callout { background:rgba(139,92,246,.12); border-color:rgba(139,92,246,.35); border-left-color:#8b5cf6; color:#ddd6fe; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
 
-.slide[data-theme="fuchsia"] .card { border-color:rgba(217,70,239,.35); box-shadow:0 30px 80px rgba(217,70,239,.25), inset 0 1px 0 rgba(255,255,255,.15); }
-.slide[data-theme="fuchsia"] .slide-number { color:#e879f9; }
-.slide[data-theme="fuchsia"] h1 { background:linear-gradient(90deg,#d946ef,#f43f5e,#8b5cf6,#d946ef); background-size:300%; background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.slide[data-theme="fuchsia"] .badge { background:rgba(217,70,239,.12); color:#f0abfc; border-color:rgba(217,70,239,.3); }
-.slide[data-theme="fuchsia"] .callout { background:rgba(217,70,239,.12); border-color:rgba(217,70,239,.35); border-left-color:#d946ef; color:#f5d0fe; }
+.app {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
 
-.slide[data-theme="rose"] .card { border-color:rgba(244,63,94,.35); box-shadow:0 30px 80px rgba(244,63,94,.25), inset 0 1px 0 rgba(255,255,255,.15); }
-.slide[data-theme="rose"] .slide-number { color:#fb7185; }
-.slide[data-theme="rose"] h1 { background:linear-gradient(90deg,#f43f5e,#ec4899,#8b5cf6,#f43f5e); background-size:300%; background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.slide[data-theme="rose"] .badge { background:rgba(244,63,94,.12); color:#fda4af; border-color:rgba(244,63,94,.3); }
-.slide[data-theme="rose"] .callout { background:rgba(244,63,94,.12); border-color:rgba(244,63,94,.35); border-left-color:#f43f5e; color:#fecdd3; }
+/* ================= TOPBAR ================= */
+.topbar {
+  position: relative;
+  z-index: 200;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(6,20,20,0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.topbar-center { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; text-align: center; }
+.topbar-center .center-label { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.topbar-center .eyebrow { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+.topbar-center .center-title { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.header-nav { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 
-.slide[data-theme="indigo"] .card { border-color:rgba(99,102,241,.35); box-shadow:0 30px 80px rgba(99,102,241,.25), inset 0 1px 0 rgba(255,255,255,.15); }
-.slide[data-theme="indigo"] .slide-number { color:#818cf8; }
-.slide[data-theme="indigo"] h1 { background:linear-gradient(90deg,#6366f1,#8b5cf6,#d946ef,#6366f1); background-size:300%; background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.slide[data-theme="indigo"] .badge { background:rgba(99,102,241,.12); color:#a5b4fc; border-color:rgba(99,102,241,.3); }
-.slide[data-theme="indigo"] .callout { background:rgba(99,102,241,.12); border-color:rgba(99,102,241,.35); border-left-color:#6366f1; color:#c7d2fe; }
+.mini-btn {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all .18s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+.mini-btn:hover { background: rgba(255,255,255,.06); }
+.mini-btn.primary { background: linear-gradient(135deg, #14b8a6, #0ea5e9); border-color: rgba(20,184,166,.8); color: #042f2e; font-weight: 700; }
+.mini-btn.active-tool {
+  background: rgba(251,191,36,.28);
+  border-color: rgba(251,191,36,.85);
+  color: #fbbf24;
+  filter: brightness(1.4) saturate(1.5);
+}
+.mini-btn.active-tool::after {
+  content: '';
+  position: absolute;
+  width: 6px; height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
+  top: 4px; right: 4px;
+  box-shadow: 0 0 8px #fbbf24;
+}
 
-.card { width:92%; max-width:1300px; max-height:88vh; overflow-y:auto; background:rgba(255,255,255,.06); backdrop-filter:blur(24px); border:1px solid rgba(255,255,255,.10); border-radius:28px; padding:40px 45px; transition:border-color .6s ease, box-shadow .6s ease; }
-.card::-webkit-scrollbar { width:8px; }
-.card::-webkit-scrollbar-thumb { background:#e879f9; border-radius:50px; }
-.slide-number { font-size:14px; letter-spacing:3px; margin-bottom:10px; font-weight:600; transition:color .6s ease; }
-h1 { font-size:clamp(1.8rem,3.2vw,2.8rem); line-height:1.15; margin-bottom:20px; background-size:300%; background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:gradientText 8s linear infinite; transition:background .6s ease; }
-@keyframes gradientText { 0%{background-position:0%;} 100%{background-position:300%;} }
-p { color:#d1d5db; line-height:1.75; margin-bottom:14px; font-size:clamp(1rem,1.3vw,1.2rem); }
-ul { padding-left:22px; margin-top:14px; }
-li { margin:10px 0; line-height:1.7; font-size:clamp(0.95rem,1.2vw,1.15rem); }
-.hero-architecture { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:14px; margin-top:35px; }
-.node { padding:18px 25px; border-radius:18px; font-weight:600; min-width:210px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.3); font-size:clamp(0.95rem,1.1vw,1.1rem); }
-.node-purple { background:linear-gradient(135deg,#7c3aed,#8b5cf6); }
-.node-fuchsia { background:linear-gradient(135deg,#c026d3,#d946ef); }
-.node-rose { background:linear-gradient(135deg,#e11d48,#f43f5e); }
-.node-indigo { background:linear-gradient(135deg,#4f46e5,#6366f1); }
-.connector-line { width:60px; height:4px; background:#e879f9; border-radius:50px; }
-.two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px; }
-.badge { display:inline-block; padding:6px 12px; border-radius:999px; font-size:0.8rem; letter-spacing:1px; margin-bottom:12px; font-weight:600; border:1px solid; transition:all .6s ease; }
-.callout { border:1px solid; border-left:5px solid; border-radius:16px; padding:18px 22px; margin-top:20px; font-size:clamp(0.95rem,1.15vw,1.1rem); line-height:1.7; transition:all .6s ease; }
-.example { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px 22px; margin-top:18px; font-size:clamp(0.95rem,1.15vw,1.1rem); }
-.example strong { display:block; margin-bottom:8px; color:#f0abfc; }
-.nav { position:absolute; top:50%; transform:translateY(-50%); width:60px; height:60px; border:none; border-radius:50%; color:white; font-size:22px; cursor:pointer; background:linear-gradient(145deg,#8b5cf6,#d946ef); box-shadow:0 10px 30px rgba(139,92,246,.35); z-index:2500; transition:transform .2s; }
-.nav:hover { transform:translateY(-50%) scale(1.08); }
-.prev { left:20px; } .next { right:20px; }
-.dots { position:absolute; bottom:18px; width:100%; display:flex; justify-content:center; gap:10px; z-index:2500; }
-.dot { height:13px; width:13px; border-radius:50%; background:#475569; cursor:pointer; transition:.3s; }
-.dot.active { background:#e879f9; box-shadow:0 0 15px #e879f9; transform:scale(1.2); }
-.progress-bar { position:absolute; top:0; left:0; width:100%; height:6px; background:rgba(255,255,255,.08); z-index:2500; }
-.progress-fill { height:100%; width:10%; background:linear-gradient(90deg,#8b5cf6,#d946ef,#f43f5e); transition:.5s; }
-.draw-tools { position:absolute; top:18px; right:18px; display:flex; gap:10px; z-index:2500; }
-.draw-btn { border:1px solid rgba(255,255,255,0.2); background:rgba(15,23,42,0.75); color:white; border-radius:12px; padding:10px 14px; font-size:0.95rem; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,0.25); font-family:'Poppins',sans-serif; }
-.draw-btn:hover { background:rgba(30,41,59,0.95); }
-.slide-counter { position:absolute; bottom:18px; right:30px; color:#94a3b8; font-size:0.9rem; letter-spacing:1px; z-index:2500; }
-#annotationLayer { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2000; }
-#annotationLayer.draw-active { pointer-events:auto; cursor:crosshair; }
-@media (max-width:768px) { .card { padding:25px; } .two-col { grid-template-columns:1fr; } .nav { width:48px; height:48px; font-size:18px; } .prev { left:8px; } .next { right:8px; } .node { min-width:160px; padding:14px 18px; } .connector-line { width:30px; } }
+.progress-ring {
+  --value: 2;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--value) * 1%), rgba(255,255,255,.09) 0);
+  position: relative;
+}
+.progress-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: rgba(6,20,20,0.96);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 50%;
+}
+.progress-ring span { position: relative; z-index: 1; font-size: 9px; font-weight: 800; }
+
+#annotationLayer {
+  position: fixed;
+  top: 64px;
+  left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+  touch-action: none;
+  display: block;
+}
+#annotationLayer.draw-active { pointer-events: auto; cursor: crosshair; }
+
+/* ================= SLIDES ================= */
+.slides {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: manipulation;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px clamp(40px, 8vw, 140px) 200px;
+}
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #1a3a3a; border-radius: 6px; }
+
+.slide {
+  display: none;
+  animation: fadeUp .4s ease;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  padding: 40px;
+  border-radius: 30px;
+  background: rgba(13,28,30,.95);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+.slide.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+h2 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; margin-top: 24px; }
+p { color: var(--text-dim); font-size: 15px; line-height: 1.65; margin-bottom: 14px; }
+
+/* ================= CARDS ================= */
+.card {
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.card.purple { border-color: #a78bfa; box-shadow: 0 0 24px rgba(167,139,250,.15); }
+.card.cyan { border-color: #22d3ee; box-shadow: 0 0 24px rgba(34,211,238,.15); }
+.card.green { border-color: #4ade80; box-shadow: 0 0 24px rgba(74,222,128,.15); }
+.card.yellow { border-color: #facc15; box-shadow: 0 0 24px rgba(250,204,21,.15); }
+.card.pink { border-color: #f472b6; box-shadow: 0 0 24px rgba(244,114,182,.15); }
+.card.orange { border-color: #fb923c; box-shadow: 0 0 24px rgba(251,146,60,.15); }
+.card.red { border-color: #f87171; box-shadow: 0 0 24px rgba(248,113,113,.15); }
+.card.teal { border-color: #2dd4bf; box-shadow: 0 0 24px rgba(45,212,191,.15); }
+.card.emerald { border-color: #34d399; box-shadow: 0 0 24px rgba(52,211,153,.15); }
+.card.blue { border-color: #60a5fa; box-shadow: 0 0 24px rgba(96,165,250,.15); }
+
+.card-label {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.card-label.cyan { color: var(--accent-2); }
+.card-label.green { color: var(--green); }
+.card-label.yellow { color: var(--yellow); }
+.card-label.pink { color: var(--pink); }
+.card-label.orange { color: var(--orange); }
+.card-label.red { color: var(--red); }
+.card-label.teal { color: var(--teal); }
+.card-label.emerald { color: var(--emerald); }
+.card-label.blue { color: var(--blue); }
+
+.pill {
+  display: inline-block;
+  background: rgba(255,255,255,.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 13px;
+  color: var(--accent-2);
+  margin: 0 2px;
+}
+
+/* ================= PA CANVAS ================= */
+.pa-canvas-wrap {
+  background: var(--paper-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+.pa-canvas {
+  background: var(--pa-canvas);
+  border-radius: 16px;
+  padding: 40px 24px;
+  background-image:
+    radial-gradient(circle, #d2d0ce 1px, transparent 1px),
+    radial-gradient(circle, #d2d0ce 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  min-width: 520px;
+}
+.pa-action {
+  background: var(--pa-card);
+  border-radius: 8px;
+  border: 1px solid var(--pa-border);
+  box-shadow: 0 1.6px 3.6px rgba(0,0,0,.08);
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+.pa-action + .pa-action { margin-top: 34px; }
+.pa-action-left-bar { width: 4px; flex-shrink: 0; background: var(--trigger); }
+.pa-action.control .pa-action-left-bar { background: var(--control); }
+.pa-action.data .pa-action-left-bar { background: var(--data); }
+.pa-action.http .pa-action-left-bar { background: var(--http); }
+.pa-action.error .pa-action-left-bar { background: var(--error); }
+.pa-action.child .pa-action-left-bar { background: #14b8a6; }
+.pa-action-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 12px 0 12px 12px; font-size: 20px; }
+.pa-action-body { flex: 1; padding: 12px 16px 14px 8px; min-width: 0; }
+.pa-action-connector { font-size: 11px; color: var(--pa-text-dim); margin-bottom: 4px; font-weight: 600; }
+.pa-action-name { font-size: 13px; font-weight: 600; color: var(--pa-text); margin-bottom: 6px; line-height: 1.3; }
+.pa-action-fields { display: flex; flex-direction: column; gap: 4px; }
+.pa-field { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.pa-field-label { color: var(--pa-text-dim); min-width: 60px; }
+.pa-field-value {
+  color: var(--pa-text);
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  background: #f3f2f1;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-connector-line { width: 2px; height: 24px; background: #c8c6c4; margin: 0 auto; position: relative; }
+.pa-connector-line::after { content: '▼'; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); color: #c8c6c4; font-size: 8px; line-height: 1; }
+.pa-success-tick {
+  position: absolute; right: -10px; top: 12px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #dff6dd;
+  color: #107c10;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+.pa-child-badge {
+  position: absolute; right: 12px; top: 12px;
+  background: #e0f7f5;
+  color: #0d9488;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.1em;
+}
+
+/* ================= RUN HISTORY ================= */
+.pa-run {
+  background: var(--pa-card);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--pa-border);
+}
+.pa-run-header {
+  padding: 16px 20px;
+  background: #faf9f8;
+  border-bottom: 1px solid var(--pa-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.pa-run-status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--pa-text); font-weight: 600; }
+.pa-run-status .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #107c10; }
+.pa-run-status .status-dot.fail { background: #d13438; }
+.pa-run-meta { font-size: 12px; color: var(--pa-text-dim); display: flex; gap: 16px; }
+.pa-run-timeline { padding: 12px 20px 20px; }
+.pa-run-step { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--pa-border); font-size: 13px; }
+.pa-run-step:last-child { border-bottom: none; }
+.pa-run-step .step-icon { width: 22px; height: 22px; border-radius: 50%; background: #dff6dd; color: #107c10; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.pa-run-step .step-icon.fail { background: #fde7e9; color: #d13438; }
+.pa-run-step .step-icon.child { background: #e0f7f5; color: #0d9488; }
+.pa-run-step .step-name { flex: 1; min-width: 0; color: var(--pa-text); }
+.pa-run-step .step-time { color: var(--pa-text-dim); font-size: 11px; }
+
+.pa-run-io {
+  margin-top: 16px;
+  background: #0f1414;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #d4d4d4;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.pa-run-io .label { color: #2dd4bf; font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; display: block; }
+.pa-run-io .k { color: #9cdcfe; }
+.pa-run-io .s { color: #ce9178; }
+.pa-run-io .n { color: #b5cea8; }
+.pa-run-io .b { color: #569cd6; }
+.pa-run-io .punct { color: #d4d4d4; }
+.pa-run-io .section { margin-bottom: 14px; }
+.pa-run-io .section:last-child { margin-bottom: 0; }
+
+/* ================= CHIPS PANEL ================= */
+.pa-dynamic {
+  background: var(--pa-card);
+  border-radius: 10px;
+  border: 1px solid var(--pa-border);
+  overflow: hidden;
+  max-width: 400px;
+}
+.pa-dynamic-header { padding: 10px 14px; border-bottom: 1px solid var(--pa-border); background: #faf9f8; font-size: 12px; font-weight: 600; color: var(--pa-text); display: flex; align-items: center; gap: 8px; }
+.pa-dynamic-search { padding: 8px 12px; border-bottom: 1px solid var(--pa-border); }
+.pa-dynamic-search input { width: 100%; background: #faf9f8; border: 1px solid var(--pa-border); border-radius: 4px; padding: 6px 10px; font-family: inherit; font-size: 12px; color: var(--pa-text); outline: none; }
+.pa-dynamic-list { padding: 8px 0; max-height: 260px; overflow-y: auto; }
+.pa-dynamic-group { padding: 6px 14px 10px; }
+.pa-dynamic-group-title { font-size: 11px; font-weight: 600; color: var(--pa-text-dim); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.pa-dynamic-group-title::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: #14b8a6; }
+.pa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pa-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(180deg, #e0f7f5, #cbf3f0);
+  border: 1px solid #a5e5e0;
+  color: #0d9488;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.pa-chip::before { content: '⊞'; font-size: 9px; opacity: 0.7; }
+
+/* ================= EXPRESSION EDITOR ================= */
+.pa-expr { background: #1a1a1a; border-radius: 10px; overflow: hidden; border: 1px solid #3e3e42; }
+.pa-expr-header { padding: 12px 16px; background: #2d2d30; border-bottom: 1px solid #3e3e42; font-size: 12px; color: #cccccc; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.pa-expr-header::before { content: 'ƒ'; font-style: italic; color: #2dd4bf; font-size: 16px; }
+.pa-expr-input { padding: 16px; background: #0f1414; color: #d4d4d4; font-family: 'Consolas','Courier New',monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; white-space: pre; }
+.pa-expr-input .fn { color: #dcdcaa; }
+.pa-expr-input .str { color: #ce9178; }
+.pa-expr-input .punct { color: #d4d4d4; }
+.pa-expr-input .var { color: #9cdcfe; }
+.pa-expr-input .out { color: #2dd4bf; }
+
+/* ================= TRANSFORM ================= */
+.pa-transform {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+.pa-transform-stage { text-align: center; }
+.pa-transform-stage-label { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+.pa-transform-box {
+  background: #061414;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #d4d4d4;
+  line-height: 1.7;
+  text-align: left;
+  min-height: 120px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.pa-transform-box .k { color: #9cdcfe; }
+.pa-transform-box .s { color: #ce9178; }
+.pa-transform-box .n { color: #b5cea8; }
+.pa-transform-box .b { color: #569cd6; }
+.pa-transform-box .punct { color: #d4d4d4; }
+.pa-transform-arrow { font-size: 24px; color: var(--teal); font-weight: 700; }
+.pa-transform-action {
+  background: linear-gradient(135deg, #14b8a6, #0ea5e9);
+  color: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(20,184,166,.3);
+}
+.pa-transform-action .icon { font-size: 28px; margin-bottom: 6px; }
+.pa-transform-action .name { font-size: 13px; font-weight: 700; }
+.pa-transform-chips {
+  background: #061414;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 120px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-content: flex-start;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.pa-transform-chips .pa-chip { background: linear-gradient(180deg, #134e4a, #0f3d3a); border-color: #2d5f5a; color: #5eead4; }
+
+/* ================= ERROR VIEWER ================= */
+.pa-error { background: var(--pa-card); border-radius: 10px; border: 1px solid var(--pa-border); overflow: hidden; max-width: 620px; }
+.pa-error-header { background: #fde7e9; padding: 14px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f3b8bc; }
+.pa-error-icon { width: 28px; height: 28px; border-radius: 50%; background: #d13438; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.pa-error-title { font-size: 14px; font-weight: 700; color: #a4262c; }
+.pa-error-code { font-size: 11px; color: #a4262c; font-family: 'Consolas','Courier New',monospace; margin-top: 2px; }
+.pa-error-body { padding: 16px 18px; background: white; }
+.pa-error-msg { font-size: 13px; color: var(--pa-text); line-height: 1.6; margin-bottom: 12px; }
+.pa-error-msg code { background: #f3f2f1; padding: 2px 6px; border-radius: 3px; font-family: 'Consolas','Courier New',monospace; font-size: 12px; color: #a4262c; }
+.pa-error-details { font-size: 11px; color: var(--pa-text-dim); padding: 10px 12px; background: #faf9f8; border-radius: 6px; font-family: 'Consolas','Courier New',monospace; line-height: 1.6; }
+
+/* ================= SANDBOX ================= */
+.pa-sandbox { background: var(--paper-2); border: 2px solid var(--teal); border-radius: 20px; padding: 24px; }
+.pa-sandbox-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.pa-sandbox-badge {
+  background: rgba(45,212,191,.12);
+  color: #2dd4bf;
+  border: 1px solid rgba(45,212,191,.4);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.pa-sandbox-title { font-size: 16px; font-weight: 700; }
+.pa-sandbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pa-sandbox-grid textarea, .pa-sandbox-grid input, .pa-sandbox-grid select {
+  width: 100%;
+  background: #061414;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #d4d4d4;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  min-height: 160px;
+}
+.pa-sandbox-grid input, .pa-sandbox-grid select { min-height: 0; }
+.pa-sandbox-grid textarea:focus, .pa-sandbox-grid input:focus { border-color: rgba(45,212,191,.5); }
+.pa-sandbox-btn {
+  background: linear-gradient(135deg, #14b8a6, #0ea5e9);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: transform .15s;
+}
+.pa-sandbox-btn:hover { transform: scale(1.02); }
+.pa-sandbox-result {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #061414;
+  border: 1px solid rgba(45,212,191,.3);
+  border-radius: 10px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #5eead4;
+  line-height: 1.7;
+  min-height: 60px;
+  overflow-x: auto;
+}
+.pa-sandbox-result pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit; }
+
+/* ================= QUIZ ================= */
+.quiz-q { background: var(--paper); border: 2px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 18px; }
+.quiz-q .question { font-weight: 700; font-size: 15px; margin-bottom: 16px; }
+.quiz-option {
+  background: var(--paper-2);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 2px solid transparent;
+  transition: all .2s;
+}
+.quiz-option:hover { border-color: rgba(255,255,255,.15); }
+.quiz-option.correct { background: rgba(74,222,128,.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; opacity: .6; }
+
+/* ================= ACCORDION ================= */
+.accordion { background: var(--paper); border: 2px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; cursor: pointer; }
+.accordion.open { border-color: var(--teal); }
+.accordion-header { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
+.accordion-header .arrow { color: var(--text-dim); transition: transform .3s; font-size: 14px; }
+.accordion.open .accordion-header .arrow { transform: rotate(180deg); color: var(--teal); }
+.accordion-body { max-height: 0; overflow: hidden; transition: max-height .4s, padding .3s; padding: 0 20px; color: var(--text-dim); font-size: 14px; line-height: 1.7; }
+.accordion.open .accordion-body { max-height: 500px; padding: 0 20px 20px; }
+
+/* ================= TAKEAWAY / WARNING ================= */
+.takeaway {
+  background: linear-gradient(135deg, rgba(45,212,191,.12), rgba(20,184,166,.08));
+  border-left: 5px solid var(--teal);
+  border-top: 2px solid rgba(45,212,191,.25);
+  border-right: 2px solid rgba(45,212,191,.25);
+  border-bottom: 2px solid rgba(45,212,191,.25);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #ccfbf1;
+}
+.takeaway strong { color: white; font-weight: 700; }
+
+.warning {
+  background: linear-gradient(135deg, rgba(248,113,113,.12), rgba(251,146,60,.08));
+  border-left: 5px solid var(--red);
+  border-top: 2px solid rgba(248,113,113,.25);
+  border-right: 2px solid rgba(248,113,113,.25);
+  border-bottom: 2px solid rgba(248,113,113,.25);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #fecaca;
+}
+
+/* ================= RECAP ================= */
+.recap-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+.recap-item .check { color: var(--green); font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+.recap-item .body { flex: 1; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+  .pa-transform { grid-template-columns: 1fr; }
+  .pa-transform-arrow { transform: rotate(90deg); }
+  .pa-sandbox-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  h2 { font-size: 22px; }
+  .slide { padding: 24px; }
+  .pa-canvas { padding: 24px 12px; }
+}
 </style>
 </head>
 <body>
-<div class="draw-tools">
-  <button class="draw-btn" id="drawToggle">✏️ Pencil</button>
-  <button class="draw-btn" id="clearDraw">Clear</button>
-  <button class="draw-btn" id="fullscreenToggle">⛶ Full</button>
-</div>
-<div class="progress-bar"><div class="progress-fill"></div></div>
-<div class="slider">
-  <canvas id="annotationLayer"></canvas>
 
-  <div class="slide active" data-theme="purple">
-    <div class="card" style="text-align:center;">
-      <div class="slide-number">00</div>
-      <h1>Child Flows in Power Automate</h1>
-      <div class="badge">Modularity | Reuse | Architecture</div>
-      <p style="font-size:1.3rem; color:#c4b5fd; margin-top:20px;">Break the giant flow. Build reusable pieces.</p>
-      <div class="callout" style="text-align:left; margin-top:30px;">
-        <strong>What you'll learn today:</strong>
-        <ul>
-          <li>What a Child Flow is</li>
-          <li>Why modularity matters</li>
-          <li>How to pass data in and out</li>
-          <li>Real-world architecture</li>
-          <li>Best practices</li>
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="mini-btn" id="prevBtnHeader">←</button>
+      <button class="mini-btn" id="pencilBtnHeader" title="Pencil">✏️</button>
+      <button class="mini-btn" id="clearBtnHeader" title="Clear">🧹</button>
+    </div>
+    <div class="topbar-center">
+      <div class="center-label">
+        <div class="eyebrow">Lesson</div>
+        <div class="center-title" id="navLabel">Hook</div>
+      </div>
+    </div>
+    <div class="header-nav">
+      <div class="progress-ring" id="progressRing"><span id="progressPercent">2%</span></div>
+      <button class="mini-btn primary" id="nextBtnHeader">→</button>
+    </div>
+  </div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- 01: HOOK -->
+    <div class="slide active">
+      <div class="step-label">01 — The Hook</div>
+      <h2>Your flow just hit 200 actions. Now what?</h2>
+      <p>You've built it in one file. It works. But every change breaks something else. And you can't reuse any of it.</p>
+      <div class="card teal">
+        <div class="card-label teal">The reality of a monolithic flow</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;">
+          <li>200 actions in one canvas</li>
+          <li>Impossible to scroll — even in the designer</li>
+          <li>Debugging means tracing through everything</li>
+          <li>Copy-paste to reuse — code duplication everywhere</li>
+          <li>Team can't work on different parts</li>
         </ul>
       </div>
+      <div class="takeaway"><strong>💡 In 25 minutes:</strong> You'll break this 200-action monster into one clean parent flow + 4 reusable child flows.</div>
     </div>
-  </div>
 
-  <div class="slide" data-theme="fuchsia">
-    <div class="card">
-      <div class="slide-number">01</div>
-      <h1>What is a Child Flow?</h1>
-      <p>A Child Flow is a separate flow that another flow calls — like a function in programming.</p>
-      <div class="hero-architecture">
-        <div class="node node-purple">Parent Flow</div>
-        <div class="connector-line"></div>
-        <div class="node node-fuchsia">Child Flow</div>
+    <!-- 02: PROBLEM -->
+    <div class="slide">
+      <div class="step-label">02 — The Problem</div>
+      <h2>Monolithic flows are maintenance nightmares</h2>
+      <p>The bigger your flow gets, the harder everything becomes. Not just for you — for anyone who inherits it.</p>
+      <div class="card red">
+        <div class="card-label red">The compounding problem</div>
+        <p style="margin-bottom:0;">Every new feature adds more actions. Every change risks breaking something upstream. Every debugging session takes longer than the last.</p>
       </div>
-      <div class="callout">Instead of one massive flow, you build small, focused pieces that work together.</div>
+      <div class="warning">
+        <strong>⚠️</strong> Monolithic flows don't scale. They can't be reused. They can't be tested. They can't be shared.
+      </div>
     </div>
-  </div>
 
-  <div class="slide" data-theme="rose">
-    <div class="card">
-      <div class="slide-number">02</div>
-      <h1>Why Modularity Matters</h1>
-      <ul>
-        <li>Reuse the same logic in multiple flows</li>
-        <li>Easier to debug — smaller pieces</li>
-        <li>Easier to update — change one child flow</li>
-        <li>Better performance and clarity</li>
-        <li>Teams can work on different pieces</li>
-      </ul>
-      <div class="callout">One giant flow is a maintenance nightmare. Modular flows are maintainable.</div>
+    <!-- 03: PAIN -->
+    <div class="slide">
+      <div class="step-label">03 — Where this hurts</div>
+      <h2>Four scenarios — all blocked by monolithic flows</h2>
+      <div class="card cyan">
+        <div class="card-label cyan">Centralized error handling</div>
+        <p style="margin-bottom:0;">Every flow has its own error-catch logic. Change the format once → edit 30 flows.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">Shared approval logic</div>
+        <p style="margin-bottom:0;">Three flows need the same approval workflow. Copy-paste each time.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">Data cleaning</div>
+        <p style="margin-bottom:0;">The same 12 transformations applied in every flow that processes customer data.</p>
+      </div>
+      <div class="card orange">
+        <div class="card-label orange">Notification templates</div>
+        <p style="margin-bottom:0;">Standard email and Teams messages — rebuilt from scratch every time.</p>
+      </div>
     </div>
-  </div>
 
-  <div class="slide" data-theme="indigo">
-    <div class="card">
-      <div class="slide-number">03</div>
-      <h1>Passing Data In and Out</h1>
-      <div class="two-col">
-        <div class="example">
-          <strong>Inputs</strong>
-          Data the parent sends to the child (IDs, strings, JSON).
+    <!-- 04: PROMISE -->
+    <div class="slide">
+      <div class="step-label">04 — The Promise</div>
+      <h2>One parent. Many children. Zero duplication.</h2>
+      <div class="pa-transform">
+        <div class="pa-transform-stage">
+          <div class="pa-transform-stage-label">Before — Monolith</div>
+          <div class="pa-transform-box">200 actions<br>One canvas<br>Impossible to reuse</div>
         </div>
-        <div class="example">
-          <strong>Outputs</strong>
-          Data the child sends back to the parent.
+        <div class="pa-transform-arrow">→</div>
+        <div class="pa-transform-stage">
+          <div class="pa-transform-action"><div class="icon">🧩</div><div class="name">Split</div></div>
+        </div>
+        <div class="pa-transform-arrow">→</div>
+        <div class="pa-transform-stage">
+          <div class="pa-transform-stage-label">After — Modular</div>
+          <div class="pa-transform-box">Parent + Children<br>Small focused pieces<br>Reusable everywhere</div>
         </div>
       </div>
-      <div class="callout">Define your inputs and outputs first. Then build the logic around them.</div>
+      <div class="takeaway"><strong>💡 The promise:</strong> Build small, focused flows once. Call them from anywhere. Change once — update everywhere.</div>
     </div>
-  </div>
 
-  <div class="slide" data-theme="purple">
-    <div class="card">
-      <div class="slide-number">04</div>
-      <h1>Real-World Architecture</h1>
-      <div class="example">
-        <strong>Error Handling Child Flow</strong>
-        Every flow calls one shared child flow for error alerts. Change the format once. Update everywhere.
+    <!-- 05: WHAT IS CHILD FLOW -->
+    <div class="slide">
+      <div class="step-label">05 — What is a Child Flow</div>
+      <h2>A flow called by another flow</h2>
+      <p>A Child Flow is a separate flow that another flow triggers. It has its own inputs and outputs — like a function in programming.</p>
+      <div class="card teal">
+        <div class="card-label teal">The mental model</div>
+        <p style="margin-bottom:0;">If a parent flow is a main function, a child flow is a helper function. It does one job, receives inputs, and returns outputs.</p>
       </div>
-      <div class="example">
-        <strong>Approval Child Flow</strong>
-        Reusable approval logic called from multiple parent flows.
-      </div>
-      <div class="callout">Design your child flows around a single responsibility.</div>
+      <div class="takeaway"><strong>💡</strong> Parent calls child. Child does its job. Parent receives the result. Done.</div>
     </div>
-  </div>
 
-  <div class="slide" data-theme="fuchsia">
-    <div class="card">
-      <div class="slide-number">05</div>
-      <h1>When to Use Child Flows</h1>
-      <ul>
-        <li>Same logic used in 2+ flows</li>
-        <li>Your flow has 50+ actions</li>
-        <li>You want a clean, readable design</li>
-        <li>Different teams own different pieces</li>
-        <li>You need centralized error handling</li>
+    <!-- 06: ANATOMY -->
+    <div class="slide">
+      <div class="step-label">06 — Anatomy</div>
+      <h2>The four parts of a Child Flow</h2>
+      <div class="card teal">
+        <div class="card-label teal">👨‍👩‍👧 Parent Flow</div>
+        <p style="margin-bottom:0;">Calls the child. Passes inputs. Receives outputs.</p>
+      </div>
+      <div class="card blue">
+        <div class="card-label blue">🧩 Child Flow</div>
+        <p style="margin-bottom:0;">Has a special "manual trigger" with defined inputs.</p>
+      </div>
+      <div class="card emerald">
+        <div class="card-label emerald">📥 Inputs</div>
+        <p style="margin-bottom:0;">Data the parent sends — strings, numbers, JSON, arrays.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">📤 Outputs</div>
+        <p style="margin-bottom:0;">Data the child sends back — "Respond to a PowerApp or flow" action.</p>
+      </div>
+    </div>
+
+    <!-- 07: PARENT VS CHILD -->
+    <div class="slide">
+      <div class="step-label">07 — Comparison</div>
+      <h2>Parent vs Child — when to use which</h2>
+      <div class="card teal">
+        <div class="card-label teal">Parent Flow</div>
+        <p style="margin-bottom:0;">The main orchestrator. Handles the trigger, decides what to do, calls children. Lives in the same solution as children.</p>
+      </div>
+      <div class="card blue">
+        <div class="card-label blue">Child Flow</div>
+        <p style="margin-bottom:0;">A focused worker. Does one job. Reusable. Called by one or more parents.</p>
+      </div>
+      <div class="takeaway"><strong>💡 Rule:</strong> If the same logic is used twice — make it a child flow.</div>
+    </div>
+
+    <!-- 08: WHERE TO CLICK -->
+    <div class="slide">
+      <div class="step-label">08 — The action</div>
+      <h2>Finding "Run a Child Flow" in the designer</h2>
+      <p>Inside your parent flow, add action → search "Run a Child Flow" — it's under the <strong>Built-in</strong> connectors.</p>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action child">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">🧩</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Built-in · Run a Child Flow</div>
+              <div class="pa-action-name">Run a Child Flow — Send error alert</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Flow</span><span class="pa-field-value">Send-Flow-Error-Alert</span></div>
+                <div class="pa-field"><span class="pa-field-label">FlowName</span><span class="pa-field-value">@triggerBody()?['name']</span></div>
+                <div class="pa-field"><span class="pa-field-label">ErrorMsg</span><span class="pa-field-value">@variables('error')</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09: INPUTS -->
+    <div class="slide">
+      <div class="step-label">09 — Inputs</div>
+      <h2>Passing data to a child</h2>
+      <p>When you add a child flow action, you select which child flow and map its inputs.</p>
+      <div class="card blue">
+        <div class="card-label blue">Common input types</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;">
+          <li>Text — error messages, IDs, names</li>
+          <li>Number — counts, amounts, thresholds</li>
+          <li>Yes/No — flags, conditions</li>
+          <li>Array — lists of items</li>
+          <li>Object (JSON) — complex payloads</li>
+        </ul>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Define inputs first in the child flow. Then the parent sees them.</div>
+    </div>
+
+    <!-- 10: OUTPUTS -->
+    <div class="slide">
+      <div class="step-label">10 — Outputs</div>
+      <h2>Returning data from a child</h2>
+      <p>Inside the child flow, add the action <span class="pill">Respond to a PowerApp or flow</span>. Define your outputs there.</p>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action data">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">📤</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Built-in · Response</div>
+              <div class="pa-action-name">Respond to a PowerApp or flow</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Status</span><span class="pa-field-value">"success"</span></div>
+                <div class="pa-field"><span class="pa-field-label">RecordId</span><span class="pa-field-value">outputs('Create_item')?['ID']</span></div>
+                <div class="pa-field"><span class="pa-field-label">Message</span><span class="pa-field-value">"Created successfully"</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11: TRIGGER -->
+    <div class="slide">
+      <div class="step-label">11 — The Trigger</div>
+      <h2>The "Manually trigger a flow" trigger</h2>
+      <p>Every child flow starts with a manual trigger. Add inputs here — the parent will be able to fill them.</p>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">👆</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Request</div>
+              <div class="pa-action-name">Manually trigger a flow</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Input 1</span><span class="pa-field-value">FlowName (text)</span></div>
+                <div class="pa-field"><span class="pa-field-label">Input 2</span><span class="pa-field-value">ErrorMsg (text)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Child flows always use the manual trigger — even though they're called programmatically.</div>
+    </div>
+
+    <!-- 12: DESIGNING THE CHILD -->
+    <div class="slide">
+      <div class="step-label">12 — Best practices</div>
+      <h2>Designing a good child flow</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;">
+        <li>One responsibility per child — don't mix concerns</li>
+        <li>Define all inputs clearly with descriptive names</li>
+        <li>Always end with a Response action</li>
+        <li>Handle errors inside the child (try/catch pattern)</li>
+        <li>Add it to the same Solution as the parent</li>
+        <li>Rename the trigger action — not just "Manually trigger a flow"</li>
       </ul>
-      <div class="callout">If you're copy-pasting logic between flows, it's time for a child flow.</div>
     </div>
-  </div>
 
-  <div class="slide" data-theme="rose">
-    <div class="card">
-      <div class="slide-number">06</div>
-      <h1>Common Mistakes</h1>
-      <ul>
-        <li>Passing too much data into a child flow</li>
-        <li>Making child flows too generic</li>
-        <li>Not documenting inputs and outputs</li>
-        <li>Forgetting to add the child flow to the Solution</li>
+    <!-- 13: SIMPLE EXAMPLE -->
+    <div class="slide">
+      <div class="step-label">13 — Simple Example</div>
+      <h2>Greeting child flow</h2>
+      <p>A child flow that takes a name and returns a greeting. This is the smallest possible example.</p>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Child — Greeting</div>
+        <div class="pa-expr-input"><span class="var">Input:</span> <span class="str">Name</span> (text) = <span class="str">"Shahabaj"</span>
+
+<span class="var">Action:</span> Compose — Build greeting
+<span class="punct">  Inputs:</span> <span class="fn">concat</span><span class="punct">(</span><span class="str">'Hello, '</span><span class="punct">, </span><span class="var">triggerBody()?[</span><span class="str">'text'</span><span class="var">]</span><span class="punct">)</span>
+
+<span class="var">Output:</span> <span class="str">Greeting</span> = <span class="out">outputs('Compose')</span></div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Parent calls it with Name="Shahabaj". Child returns "Hello, Shahabaj".</div>
+    </div>
+
+    <!-- 14: DESIGNER WALKTHROUGH -->
+    <div class="slide">
+      <div class="step-label">14 — In the designer</div>
+      <h2>Real parent flow calling a child</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">👆</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Manual trigger</div>
+              <div class="pa-action-name">Manually trigger a flow</div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">{ }</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Data Operation</div>
+              <div class="pa-action-name">Parse JSON — User response</div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action child">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">🧩</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Built-in</div>
+              <div class="pa-action-name">Run a Child Flow — Greeting</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Name</span><span class="pa-field-value">body('Parse_JSON')?['name']</span></div>
+              </div>
+              <div class="pa-child-badge">CHILD</div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action">
+            <div class="pa-action-left-bar" style="background:#6264a7"></div>
+            <div class="pa-action-icon" style="color:#6264a7">💬</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Microsoft Teams</div>
+              <div class="pa-action-name">Post message — Greeting</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Message</span><span class="pa-field-value">body('Run_a_Child_Flow')?['greeting']</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 15: REFERENCE PATTERNS -->
+    <div class="slide">
+      <div class="step-label">15 — Reference patterns</div>
+      <h2>Accessing child flow outputs</h2>
+      <div class="pa-run-io">
+        <span class="k">// Basic output</span><br>
+        body('Run_a_Child_Flow')?['greeting']<br><br>
+        <span class="k">// Number output</span><br>
+        body('Run_a_Child_Flow')?['count']<br><br>
+        <span class="k">// Array output</span><br>
+        body('Run_a_Child_Flow')?['items']<br><br>
+        <span class="k">// Nested object</span><br>
+        body('Run_a_Child_Flow')?['result']?['id']<br><br>
+        <span class="k">// With null fallback</span><br>
+        <span class="fn">coalesce</span>(body('Run_a_Child_Flow')?['greeting'], <span class="s">'No greeting'</span>)
+      </div>
+      <div class="takeaway"><strong>💡</strong> Uses <span class="pill">body()</span> just like other actions. The name must match the child action's name.</div>
+    </div>
+
+    <!-- 16-20: USE CASES -->
+    <div class="slide">
+      <div class="step-label">16 — Use case 1</div>
+      <h2>Centralized error handler</h2>
+      <p>Every parent flow calls one shared error-handling child. Change the format once, update everywhere.</p>
+      <div class="card red"><div class="card-label red">Pattern</div><p style="margin-bottom:0;">Failed action → Scope catch → Run Child Flow: Send-Error-Alert</p></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">17 — Use case 2</div>
+      <h2>Shared approval logic</h2>
+      <p>Multi-step approval flows reused across expense, leave, purchase — all call the same child.</p>
+      <div class="card purple"><div class="card-label">Pattern</div><p style="margin-bottom:0;">Trigger → Run Child Flow: Approval → Use output</p></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">18 — Use case 3</div>
+      <h2>Data processing child</h2>
+      <p>Cleaning, normalizing, deduplicating — one child handles it. Every flow that needs clean data calls it.</p>
+      <div class="card green"><div class="card-label green">Pattern</div><p style="margin-bottom:0;">Input raw data → Run Child Flow: Clean-Data → Receive structured output</p></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">19 — Use case 4</div>
+      <h2>Notification child</h2>
+      <p>Standard Teams and email formats. One child, called from anywhere.</p>
+      <div class="card orange"><div class="card-label orange">Pattern</div><p style="margin-bottom:0;">Run Child Flow: Send-Notification → Posts to Teams + email</p></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">20 — Use case 5</div>
+      <h2>Complex calculation child</h2>
+      <p>Pricing, forecasting, scoring — anything requiring multi-step calculation. Isolated and testable.</p>
+      <div class="card blue"><div class="card-label blue">Pattern</div><p style="margin-bottom:0;">Input parameters → Run Child Flow: Calculate-Score → Receive result</p></div>
+    </div>
+
+    <!-- 21: COMPARE -->
+    <div class="slide">
+      <div class="step-label">21 — Compare</div>
+      <h2>Child Flow vs Scope vs Duplicate</h2>
+      <div class="card teal"><div class="card-label teal">Child Flow</div><p style="margin-bottom:0;">Reusable across flows. Deployable separately. Has its own run history.</p></div>
+      <div class="card purple"><div class="card-label">Scope</div><p style="margin-bottom:0;">Groups actions inside one flow. Not reusable elsewhere. Same run history.</p></div>
+      <div class="card red"><div class="card-label red">Duplicate</div><p style="margin-bottom:0;">Copy-paste logic in every flow. Maintenance nightmare. Never do this.</p></div>
+      <div class="takeaway"><strong>💡</strong> Use Child Flow for reusability. Use Scope for grouping inside one flow.</div>
+    </div>
+
+    <!-- 22-24: SCENARIO 1 — Error handler -->
+    <div class="slide">
+      <div class="step-label">22 — Real scenario 1</div>
+      <h2>Error handler child — the inputs</h2>
+      <div class="card red"><div class="card-label red">Inputs defined in the child</div><ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;"><li>FlowName (text)</li><li>ErrorMsg (text)</li><li>RunUrl (text)</li><li>Severity (text)</li></ul></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">23 — Real scenario 1</div>
+      <h2>Error handler child — the flow</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action child"><div class="pa-action-left-bar"></div><div class="pa-action-icon">👆</div><div class="pa-action-body"><div class="pa-action-connector">Manual trigger</div><div class="pa-action-name">Manually trigger a flow</div><div class="pa-action-fields"><div class="pa-field"><span class="pa-field-label">Inputs</span><span class="pa-field-value">FlowName, ErrorMsg, RunUrl, Severity</span></div></div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">📊</div><div class="pa-action-body"><div class="pa-action-connector">SharePoint</div><div class="pa-action-name">Create item — Error log</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action"><div class="pa-action-left-bar" style="background:#6264a7"></div><div class="pa-action-icon" style="color:#6264a7">💬</div><div class="pa-action-body"><div class="pa-action-connector">Microsoft Teams</div><div class="pa-action-name">Post message — Alerts channel</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">24 — Real scenario 1</div>
+      <h2>Error handler child — the result</h2>
+      <div class="pa-run">
+        <div class="pa-run-header"><div class="pa-run-status"><span class="status-dot"></span>Succeeded</div><div class="pa-run-meta"><span>Just now</span></div></div>
+        <div class="pa-run-timeline">
+          <div class="pa-run-io">
+            <div class="section"><span class="label">Teams message sent</span><span class="s">"🚨 MyFlow failed: Timeout after 30s. Run URL: https://..."</span></div>
+            <div class="section"><span class="label">SharePoint item created</span><span class="s">Logged to Error Log with timestamp</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Change the format once in this child → every flow that calls it now shows the new format.</div>
+    </div>
+
+    <!-- 25-27: SCENARIO 2 — Approval -->
+    <div class="slide">
+      <div class="step-label">25 — Real scenario 2</div>
+      <h2>Approval child — the setup</h2>
+      <p>One child handles multi-step approval. Parent flows pass in the request details.</p>
+      <div class="card purple"><div class="card-label">Inputs</div><ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;"><li>RequestTitle (text)</li><li>RequestedBy (text)</li><li>Amount (number)</li><li>Category (text)</li></ul></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">26 — Real scenario 2</div>
+      <h2>Approval child — the flow</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action child"><div class="pa-action-left-bar"></div><div class="pa-action-icon">👆</div><div class="pa-action-body"><div class="pa-action-connector">Manual trigger</div><div class="pa-action-name">Manually trigger a flow</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action control"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🔀</div><div class="pa-action-body"><div class="pa-action-connector">Control</div><div class="pa-action-name">Condition — Amount > 1000</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">✅</div><div class="pa-action-body"><div class="pa-action-connector">Approvals</div><div class="pa-action-name">Start and wait for an approval</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action child"><div class="pa-action-left-bar"></div><div class="pa-action-icon">📤</div><div class="pa-action-body"><div class="pa-action-connector">Built-in · Response</div><div class="pa-action-name">Respond to a PowerApp or flow</div><div class="pa-action-fields"><div class="pa-field"><span class="pa-field-label">Decision</span><span class="pa-field-value">outputs('Start_and_wait')?['outcome']</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">27 — Real scenario 2</div>
+      <h2>Approval child — the result</h2>
+      <div class="card green"><div class="card-label green">Parent flow receives</div><p style="margin-bottom:0;"><span class="pill">body('Run_Approval_Child')?['Decision']</span> → "Approve" or "Reject"</p></div>
+      <div class="takeaway"><strong>💡</strong> Same approval child called from expense, leave, and purchase parent flows.</div>
+    </div>
+
+    <!-- 28-30: SCENARIO 3 — Data cleaning -->
+    <div class="slide">
+      <div class="step-label">28 — Real scenario 3</div>
+      <h2>Data cleaning child — the problem</h2>
+      <p>Every flow that processes customer data needs the same 8 cleaning steps. Instead of duplicating — make one child.</p>
+      <div class="card cyan"><div class="card-label cyan">Common cleaning tasks</div><ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;"><li>Trim whitespace</li><li>Normalize phone numbers</li><li>Validate email format</li><li>Standardize country codes</li><li>Deduplicate</li></ul></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">29 — Real scenario 3</div>
+      <h2>Data cleaning child — the flow</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action child"><div class="pa-action-left-bar"></div><div class="pa-action-icon">👆</div><div class="pa-action-body"><div class="pa-action-connector">Manual trigger</div><div class="pa-action-name">Manually trigger a flow</div><div class="pa-action-fields"><div class="pa-field"><span class="pa-field-label">Input</span><span class="pa-field-value">RawData (text)</span></div></div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">{ }</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Parse JSON — Raw input</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🎯</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Select — Clean fields</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action child"><div class="pa-action-left-bar"></div><div class="pa-action-icon">📤</div><div class="pa-action-body"><div class="pa-action-connector">Built-in · Response</div><div class="pa-action-name">Respond — CleanData</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">30 — Real scenario 3</div>
+      <h2>Data cleaning child — the result</h2>
+      <div class="card green"><div class="card-label green">Output sent back</div><p style="margin-bottom:0;">Cleaned, validated, normalized data ready for any downstream system.</p></div>
+      <div class="takeaway"><strong>💡</strong> Change a cleaning rule → update one child → every parent gets the new behavior.</div>
+    </div>
+
+    <!-- 31-32: SCENARIO 4 — Notification -->
+    <div class="slide">
+      <div class="step-label">31 — Real scenario 4</div>
+      <h2>Notification child — the setup</h2>
+      <p>Every flow that sends updates uses the same Teams + email format. One child handles it.</p>
+      <div class="card orange"><div class="card-label orange">Inputs</div><ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;"><li>Title (text)</li><li>Body (text)</li><li>Channel (text)</li><li>Priority (text)</li></ul></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">32 — Real scenario 4</div>
+      <h2>Notification child — full flow</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action child"><div class="pa-action-left-bar"></div><div class="pa-action-icon">👆</div><div class="pa-action-body"><div class="pa-action-connector">Manual trigger</div><div class="pa-action-name">Manually trigger a flow</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action"><div class="pa-action-left-bar" style="background:#6264a7"></div><div class="pa-action-icon" style="color:#6264a7">💬</div><div class="pa-action-body"><div class="pa-action-connector">Microsoft Teams</div><div class="pa-action-name">Post adaptive card</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action"><div class="pa-action-left-bar" style="background:#0078d4"></div><div class="pa-action-icon" style="color:#0078d4">✉️</div><div class="pa-action-body"><div class="pa-action-connector">Outlook</div><div class="pa-action-name">Send email fallback</div></div></div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> One notification style. Every parent flow looks consistent.</div>
+    </div>
+
+    <!-- 33-38: PATTERNS -->
+    <div class="slide">
+      <div class="step-label">33 — Pattern 1</div>
+      <h2>Defining input schema</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Manual trigger — Add an input</div>
+        <div class="pa-expr-input"><span class="fn">Text</span> <span class="str">"FlowName"</span>
+<span class="fn">Text</span> <span class="str">"ErrorMessage"</span>
+<span class="fn">Number</span> <span class="str">"Count"</span>
+<span class="fn">Yes/No</span> <span class="str">"IsUrgent"</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">34 — Pattern 2</div>
+      <h2>Defining output schema</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Respond to a PowerApp or flow</div>
+        <div class="pa-expr-input"><span class="fn">Text</span> <span class="str">"Status"</span>
+<span class="fn">Number</span> <span class="str">"RecordId"</span>
+<span class="fn">Array</span> <span class="str">"Errors"</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">35 — Pattern 3</div>
+      <h2>Calling a child from the parent</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Run a Child Flow — inputs</div>
+        <div class="pa-expr-input"><span class="var">FlowName:</span> <span class="str">'MyProcess'</span>
+<span class="var">ErrorMessage:</span> <span class="fn">outputs</span><span class="punct">(</span><span class="str">'FailedScope'</span><span class="punct">)?[</span><span class="str">'error'</span><span class="punct">]?[</span><span class="str">'message'</span><span class="punct">]</span>
+<span class="var">Count:</span> <span class="n">3</span>
+<span class="var">IsUrgent:</span> <span class="b">true</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">36 — Pattern 4</div>
+      <h2>Referencing child outputs</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Downstream action</div>
+        <div class="pa-expr-input"><span class="fn">body</span><span class="punct">(</span><span class="str">'Run_a_Child_Flow'</span><span class="punct">)?[</span><span class="str">'Status'</span><span class="punct">]</span>
+<span class="fn">body</span><span class="punct">(</span><span class="str">'Run_a_Child_Flow'</span><span class="punct">)?[</span><span class="str">'RecordId'</span><span class="punct">]</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">37 — Pattern 5</div>
+      <h2>Error propagation from child to parent</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Inside child — try/catch</div>
+        <div class="pa-expr-input"><span class="var">Scope:</span> Try
+<span class="punct">  ...risky actions...</span>
+
+<span class="var">Scope:</span> Catch <span class="punct">(Run after: has failed)</span>
+<span class="punct">  </span><span class="fn">Respond</span> → Status: <span class="str">"error"</span>, Message: <span class="str">error details</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">38 — Pattern 6</div>
+      <h2>Nested child flows (child calls child)</h2>
+      <p>Yes — child flows can call other child flows. Useful for orchestrating complex workflows in layers.</p>
+      <div class="card teal"><div class="card-label teal">Layered structure</div><p style="margin-bottom:0;">Parent → Data Child → Notification Child → Logging Child</p></div>
+      <div class="warning"><strong>⚠️</strong> Maximum 10 levels of nesting. Don't overuse — keep the tree shallow.</div>
+    </div>
+
+    <!-- 39-44: ERRORS -->
+    <div class="slide">
+      <div class="step-label">39 — Error 1</div>
+      <h2>Renamed child action breaks references</h2>
+      <p>You rename the child action from "Run_a_Child_Flow" to "Run_Alert_Child". Every downstream reference breaks.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Unable to find action</div><div class="pa-error-code">ActionNotFound · 400</div></div></div>
+        <div class="pa-error-body"><div class="pa-error-msg">The workflow expression references <code>body('Run_a_Child_Flow')</code> but no action with that name exists.</div></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">40 — Error 2</div>
+      <h2>Wrong input type</h2>
+      <p>Child expects a Number but the parent passes Text. The action fails on the first run.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Invalid input type</div><div class="pa-error-code">InvalidParameter · 400</div></div></div>
+        <div class="pa-error-body"><div class="pa-error-msg">Parameter "Count" expects a number, received a string.</div></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">41 — Error 3</div>
+      <h2>Missing response action</h2>
+      <p>The child runs but never returns anything. The parent waits for a response — and times out.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Child flow did not return a response</div><div class="pa-error-code">ActionTimedOut · 504</div></div></div>
+        <div class="pa-error-body"><div class="pa-error-msg">The child flow finished but did not call "Respond to a PowerApp or flow".</div></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">42 — Error 4</div>
+      <h2>Circular reference</h2>
+      <p>Parent calls child. Child calls parent. Infinite loop. Power Automate blocks it.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Circular dependency detected</div><div class="pa-error-code">CircularReference · 400</div></div></div>
+        <div class="pa-error-body"><div class="pa-error-msg">Flow A calls Flow B, and Flow B calls Flow A. This creates an infinite loop.</div></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">43 — Error 5</div>
+      <h2>Child in different solution</h2>
+      <p>Parent and child must live in the same Solution. Otherwise the parent can't find the child.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Child flow not found</div><div class="pa-error-code">FlowNotFound · 404</div></div></div>
+        <div class="pa-error-body"><div class="pa-error-msg">The child flow "Send-Error-Alert" is not in the current Solution.</div></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">44 — Error 6</div>
+      <h2>Connection owner missing</h2>
+      <p>Child flow uses a connection that the parent's service account doesn't have. Fails at runtime.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Connection not authorized</div><div class="pa-error-code">ConnectionAuthorizationFailed</div></div></div>
+        <div class="pa-error-body"><div class="pa-error-msg">The connection 'shared_sharepointonline' is not available in this environment.</div></div>
+      </div>
+    </div>
+
+    <!-- 45-47: SANDBOXES -->
+    <div class="slide">
+      <div class="step-label">45 — Sandbox 1</div>
+      <h2>Try it — design a child input</h2>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header"><span class="pa-sandbox-badge">Interactive</span><span class="pa-sandbox-title">Add inputs to your child trigger</span></div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px;">Input name</label>
+            <input id="inputName" value="FlowName" style="width:100%; background:#061414; border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:#d4d4d4; font-family:monospace;">
+            <label style="display:block; font-size:12px; color:var(--text-dim); margin:12px 0 6px;">Input type</label>
+            <select id="inputType" style="width:100%; background:#061414; border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:#d4d4d4; font-family:monospace;">
+              <option>Text</option>
+              <option>Number</option>
+              <option>Yes/No</option>
+              <option>Array</option>
+              <option>Object</option>
+            </select>
+            <button class="pa-sandbox-btn" onclick="addInput()">Add input →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="inputResult"><pre>No inputs added yet.
+
+Click "Add input" to define your child flow's inputs.</pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">46 — Sandbox 2</div>
+      <h2>Try it — design child outputs</h2>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header"><span class="pa-sandbox-badge">Interactive</span><span class="pa-sandbox-title">Define what the child returns</span></div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px;">Output name</label>
+            <input id="outputName" value="Status" style="width:100%; background:#061414; border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:#d4d4d4; font-family:monospace;">
+            <label style="display:block; font-size:12px; color:var(--text-dim); margin:12px 0 6px;">Output value</label>
+            <input id="outputValue" value="'success'" style="width:100%; background:#061414; border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:#d4d4d4; font-family:monospace;">
+            <button class="pa-sandbox-btn" onclick="addOutput()">Add output →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="outputResult"><pre>No outputs added yet.
+
+Define what the parent flow will receive.</pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">47 — Sandbox 3</div>
+      <h2>Try it — parent-child simulator</h2>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header"><span class="pa-sandbox-badge">Interactive</span><span class="pa-sandbox-title">Simulate a parent calling a child</span></div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px;">Parent passes: Name</label>
+            <input id="simName" value="Shahabaj" style="width:100%; background:#061414; border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:#d4d4d4; font-family:monospace;">
+            <button class="pa-sandbox-btn" onclick="simulateCall()">Run simulation →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="simResult"><pre>Click "Run simulation" to see the parent call the child and receive the response.</pre></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 48: BEST PRACTICES -->
+    <div class="slide">
+      <div class="step-label">48 — Best practices</div>
+      <h2>Rules for clean child flows</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;">
+        <li>One responsibility per child flow</li>
+        <li>Rename every action — trigger, response, and child call</li>
+        <li>Always call "Respond to a PowerApp or flow"</li>
+        <li>Handle errors inside the child with Scope</li>
+        <li>Keep parent + child in the same Solution</li>
+        <li>Document the inputs and outputs on the child</li>
+        <li>Test the child standalone before using it in a parent</li>
       </ul>
     </div>
-  </div>
 
-  <div class="slide" data-theme="indigo">
-    <div class="card" style="text-align:center;">
-      <div class="slide-number">07</div>
-      <h1>Summary</h1>
-      <div class="hero-architecture" style="margin-top:40px;">
-        <div class="node node-purple">Small</div>
-        <div class="node node-fuchsia">Focused</div>
-        <div class="node node-rose">Reusable</div>
+    <!-- 49: QUIZ -->
+    <div class="slide">
+      <div class="step-label">49 — Quiz</div>
+      <h2>Does it stick?</h2>
+      <div class="quiz-q">
+        <div class="question">1. What trigger does every child flow start with?</div>
+        <div class="quiz-option" onclick="answer(this, false)">Recurrence trigger</div>
+        <div class="quiz-option" onclick="answer(this, true)">Manually trigger a flow</div>
+        <div class="quiz-option" onclick="answer(this, false)">When a record is created</div>
       </div>
-      <div class="callout" style="text-align:left; margin-top:40px;">
-        Child flows turn a monolithic flow into a modular system. Build once. Use everywhere. Maintain easily.
+      <div class="quiz-q">
+        <div class="question">2. How do you return data from a child flow?</div>
+        <div class="quiz-option" onclick="answer(this, false)">Send an email</div>
+        <div class="quiz-option" onclick="answer(this, true)">Respond to a PowerApp or flow</div>
+        <div class="quiz-option" onclick="answer(this, false)">Post to SharePoint</div>
       </div>
-    </div>
-  </div>
-
-  <div class="slide" data-theme="purple">
-    <div class="card" style="text-align:center;">
-      <div class="slide-number">08</div>
-      <h1>Thanks for Watching</h1>
-      <p style="font-size:1.3rem; margin-top:20px;">New Power Automate content every day.</p>
-      <div class="callout" style="text-align:left; margin-top:30px;">
-        <strong>Next up:</strong> Error Handling Patterns — how to make sure your flows fail loudly.
-        <br><br>
-        <strong>Subscribe</strong> for daily tips and tutorials.
+      <div class="quiz-q">
+        <div class="question">3. How does the parent reference the child output?</div>
+        <div class="quiz-option" onclick="answer(this, false)">outputs('Child_Name')</div>
+        <div class="quiz-option" onclick="answer(this, true)">body('Run_a_Child_Flow')?['key']</div>
+        <div class="quiz-option" onclick="answer(this, false)">triggerBody()?['key']</div>
       </div>
     </div>
-  </div>
 
-  <button class="nav prev">❮</button>
-  <button class="nav next">❯</button>
-  <div class="dots"></div>
-  <div class="slide-counter"><span id="currentSlide">1</span> / <span id="totalSlides">9</span></div>
+    <!-- 50: RECAP -->
+    <div class="slide">
+      <div class="step-label">50 — Recap</div>
+      <h2>What you now know</h2>
+      <div class="card teal">
+        <div class="recap-item"><div class="check">✔</div><div class="body"><strong>Child Flows</strong> are reusable flows called by parent flows.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">They start with <strong>Manually trigger a flow</strong> and end with <strong>Respond to a PowerApp or flow</strong>.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Inputs are defined in the trigger. Outputs in the response action.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Reference outputs with <span class="pill">body('Run_a_Child_Flow')?['key']</span>.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Parent and child must live in the same <strong>Solution</strong>.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Use them for: error handling, approvals, data cleaning, notifications, calculations.</div></div>
+      </div>
+      <div class="takeaway"><strong>Next lesson:</strong> Solutions & ALM — how to package parent + child flows for deployment.</div>
+    </div>
+
+  </div>
 </div>
+
 <script>
+// ================= SLIDES =================
 const slides = document.querySelectorAll('.slide');
-const dotsContainer = document.querySelector('.dots');
-const progressFill = document.querySelector('.progress-fill');
-const annotationLayer = document.getElementById('annotationLayer');
-const drawToggle = document.getElementById('drawToggle');
-const clearDraw = document.getElementById('clearDraw');
-const fullscreenToggle = document.getElementById('fullscreenToggle');
-const currentSlideEl = document.getElementById('currentSlide');
-const totalSlidesEl = document.getElementById('totalSlides');
-const ctx = annotationLayer.getContext('2d');
-let current = 0, isDrawing = false, isDrawMode = false, lastX = 0, lastY = 0;
-totalSlidesEl.textContent = slides.length;
-function resizeCanvas() { const r = document.querySelector('.slider').getBoundingClientRect(); annotationLayer.width = r.width; annotationLayer.height = r.height; }
-function startDraw(e) { if (!isDrawMode) return; isDrawing = true; const r = annotationLayer.getBoundingClientRect(); lastX = e.clientX - r.left; lastY = e.clientY - r.top; }
-function draw(e) { if (!isDrawing || !isDrawMode) return; const r = annotationLayer.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#f0abfc'; ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); lastX = x; lastY = y; }
-function stopDraw() { isDrawing = false; }
-function toggleDrawMode() { isDrawMode = !isDrawMode; annotationLayer.classList.toggle('draw-active', isDrawMode); drawToggle.textContent = isDrawMode ? '✏️ On' : '✏️ Pencil'; drawToggle.style.background = isDrawMode ? 'rgba(240,171,252,0.18)' : 'rgba(15,23,42,0.75)'; }
-function clearAnnotations() { ctx.clearRect(0, 0, annotationLayer.width, annotationLayer.height); }
-function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
-window.addEventListener('resize', resizeCanvas);
-annotationLayer.addEventListener('pointerdown', startDraw);
-annotationLayer.addEventListener('pointermove', draw);
-annotationLayer.addEventListener('pointerup', stopDraw);
-annotationLayer.addEventListener('pointerleave', stopDraw);
-annotationLayer.addEventListener('pointercancel', stopDraw);
-drawToggle.addEventListener('click', toggleDrawMode);
-clearDraw.addEventListener('click', clearAnnotations);
-fullscreenToggle.addEventListener('click', toggleFullscreen);
+const navLabel = document.getElementById('navLabel');
+const slidesContainer = document.getElementById('slidesContainer');
+const stepLabels = [
+  'Hook','Problem','Pain','Promise','What',
+  'Anatomy','Compare','Action','Inputs','Outputs',
+  'Trigger','Design','Example','Designer','Patterns',
+  'UC1','UC2','UC3','UC4','UC5',
+  'Compare','Scenario 1','Scenario 2','Scenario 3','Scenario 4',
+  'Scenario 5','Scenario 6','Scenario 7','Scenario 8','Scenario 9',
+  'Scenario 10','Scenario 11','Pattern 1','Pattern 2','Pattern 3',
+  'Pattern 4','Pattern 5','Pattern 6','Err 1','Err 2',
+  'Err 3','Err 4','Err 5','Err 6','Sandbox 1',
+  'Sandbox 2','Sandbox 3','Best','Quiz','Recap'
+];
+let current = 0;
+let dprScale = 1;
+const slideAnnotations = {};
+
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const pencilBtnHeader = document.getElementById('pencilBtnHeader');
+const clearBtnHeader = document.getElementById('clearBtnHeader');
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  dprScale = dpr;
+  const topbar = document.querySelector('.topbar');
+  const topbarH = topbar ? topbar.getBoundingClientRect().height : 64;
+  const availableH = window.innerHeight - topbarH;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = availableH * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = availableH + 'px';
+  canvas.style.top = topbarH + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+
+function showSlide(i) {
+  if (current >= 0 && canvas.width > 0) slideAnnotations[current] = canvas.toDataURL();
+  syncPencilState(false);
+  if (slides[current]) slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(i, slides.length - 1));
+  slides[current].classList.add('active');
+  navLabel.textContent = stepLabels[current] || 'Lesson';
+  const pct = Math.round(((current + 1) / slides.length) * 100);
+  document.getElementById('progressRing').style.setProperty('--value', pct);
+  document.getElementById('progressPercent').textContent = pct + '%';
+  slidesContainer.scrollTop = 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale); };
+    img.src = slideAnnotations[current];
+  }
+}
+
+function bindNav(btn, delta) {
+  if (!btn) return;
+  let touched = false;
+  btn.addEventListener('touchstart', (e) => { touched = true; e.preventDefault(); showSlide(current + delta); }, { passive: false });
+  btn.addEventListener('click', () => { if (touched) { touched = false; return; } showSlide(current + delta); });
+}
+bindNav(document.getElementById('nextBtnHeader'), 1);
+bindNav(document.getElementById('prevBtnHeader'), -1);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showSlide(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') showSlide(current - 1);
+});
+
+let touchStartX = 0, touchStartY = 0;
+slidesContainer.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+slidesContainer.addEventListener('touchend', (e) => {
+  if (isDrawMode) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) showSlide(current + (dx < 0 ? 1 : -1));
+}, { passive: true });
+
+// Pencil
+canvas.addEventListener('pointerdown', e => {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  lastX = e.clientX;
+  lastY = e.clientY - canvas.getBoundingClientRect().top;
+});
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  const y = e.clientY - canvas.getBoundingClientRect().top;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(e.clientX, y); ctx.stroke();
+  lastX = e.clientX; lastY = y;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt => canvas.addEventListener(evt, () => { isDrawing = false; }));
+
+function syncPencilState(next) {
+  isDrawMode = Boolean(next);
+  canvas.classList.toggle('draw-active', isDrawMode);
+  if (pencilBtnHeader) pencilBtnHeader.classList.toggle('active-tool', isDrawMode);
+  if (!isDrawMode) isDrawing = false;
+}
+function togglePencilMode(e) { if (e) { e.preventDefault(); e.stopPropagation(); } syncPencilState(!isDrawMode); }
+if (pencilBtnHeader) {
+  pencilBtnHeader.addEventListener('click', togglePencilMode);
+  pencilBtnHeader.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); togglePencilMode(); }, { passive: false });
+}
+function handleClear(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) delete slideAnnotations[current];
+  syncPencilState(false);
+}
+if (clearBtnHeader) {
+  clearBtnHeader.addEventListener('click', handleClear);
+  clearBtnHeader.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); handleClear(); }, { passive: false });
+}
+
+// ================= SANDBOX FUNCTIONS =================
+let inputList = [];
+function addInput() {
+  const name = document.getElementById('inputName').value.trim();
+  const type = document.getElementById('inputType').value;
+  if (!name) return;
+  inputList.push({ name, type });
+  const out = document.getElementById('inputResult');
+  let html = '<pre>Manual trigger — inputs defined:\n\n';
+  inputList.forEach((inp, i) => { html += `${i + 1}. ${inp.type} "${inp.name}"\n`; });
+  html += '\nThe parent flow will see these as inputs when it calls the child.</pre>';
+  out.innerHTML = html;
+}
+
+let outputList = [];
+function addOutput() {
+  const name = document.getElementById('outputName').value.trim();
+  const value = document.getElementById('outputValue').value.trim();
+  if (!name) return;
+  outputList.push({ name, value });
+  const out = document.getElementById('outputResult');
+  let html = '<pre>Respond to a PowerApp or flow — outputs:\n\n';
+  outputList.forEach((o, i) => { html += `${i + 1}. "${o.name}" = ${o.value}\n`; });
+  html += '\nThe parent receives these as dynamic content.</pre>';
+  out.innerHTML = html;
+}
+
+function simulateCall() {
+  const name = document.getElementById('simName').value.trim() || 'World';
+  const out = document.getElementById('simResult');
+  out.innerHTML = '<pre>' +
+    '▶ Parent flow calls child...\n\n' +
+    '📥 Input passed:\n' +
+    `   Name = "${name}"\n\n` +
+    '⏳ Child executes...\n\n' +
+    '🧩 Child builds greeting:\n' +
+    `   concat('Hello, ', '${name}') = "Hello, ${name}"\n\n` +
+    '📤 Child responds with:\n' +
+    `   Greeting = "Hello, ${name}"\n\n` +
+    '✅ Parent receives response:\n' +
+    `   body('Run_a_Child_Flow')?['Greeting'] = "Hello, ${name}"` +
+    '</pre>';
+}
+
+function answer(el, correct) {
+  const parent = el.parentElement;
+  if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  parent.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+  if (!correct) {
+    parent.querySelectorAll('.quiz-option').forEach(o => {
+      if (o.getAttribute('onclick').includes('true')) o.classList.add('correct');
+    });
+  }
+}
+
+// ================= INIT =================
 resizeCanvas();
-slides.forEach((_, i) => { const d = document.createElement('div'); d.classList.add('dot'); if (i === 0) d.classList.add('active'); d.addEventListener('click', () => showSlide(i)); dotsContainer.appendChild(d); });
-const dots = document.querySelectorAll('.dot');
-function updateProgress() { progressFill.style.width = `${((current + 1) / slides.length) * 100}%`; currentSlideEl.textContent = current + 1; }
-function showSlide(i) { slides[current].classList.remove('active'); dots[current].classList.remove('active'); current = (i + slides.length) % slides.length; slides[current].classList.add('active'); dots[current].classList.add('active'); updateProgress(); clearAnnotations(); }
-document.querySelector('.next').addEventListener('click', () => showSlide(current + 1));
-document.querySelector('.prev').addEventListener('click', () => showSlide(current - 1));
-document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') showSlide(current + 1); if (e.key === 'ArrowLeft') showSlide(current - 1); if (e.key === 'f' || e.key === 'F') toggleFullscreen(); });
-updateProgress();
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale); };
+    img.src = slideAnnotations[current];
+  }
+});
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+showSlide(0);
 </script>
 </body>
 </html>

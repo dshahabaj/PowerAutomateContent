@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Parse JSON in Power Automate — Complete Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Inter',sans-serif; }
+
+:root {
+  --bg: #0a0612;
+  --paper: #16101f;
+  --paper-2: #1e1629;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+
+  /* PA designer light palette */
+  --pa-bg: #f3f2f1;
+  --pa-canvas: #faf9f8;
+  --pa-card: #ffffff;
+  --pa-text: #201f1e;
+  --pa-text-dim: #605e5c;
+  --pa-border: #edebe9;
+
+  --trigger: #0078d4;
+  --control: #8764b8;
+  --data: #107c10;
+  --http: #038387;
+  --error: #d13438;
+
+  --accent: #a78bfa;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ================= TOPBAR ================= */
+.topbar {
+  position: relative;
+  z-index: 200;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(10,6,18,0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.topbar-center { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; text-align: center; }
+.topbar-center .center-label { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.topbar-center .eyebrow { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+.topbar-center .center-title { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.header-nav { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+.mini-btn {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: all .18s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+.mini-btn:hover { background: rgba(255,255,255,.06); }
+.mini-btn.primary { background: linear-gradient(135deg, #a78bfa, #8b5cf6); border-color: rgba(167,139,250,.8); color: #130b1e; font-weight: 700; }
+.mini-btn.active-tool {
+  background: rgba(251,191,36,.28);
+  border-color: rgba(251,191,36,.85);
+  color: #fbbf24;
+  filter: brightness(1.4) saturate(1.5);
+}
+.mini-btn.active-tool::after {
+  content: '';
+  position: absolute;
+  width: 6px; height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
+  top: 4px; right: 4px;
+  box-shadow: 0 0 8px #fbbf24;
+}
+
+.progress-ring {
+  --value: 2;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--value) * 1%), rgba(255,255,255,.09) 0);
+  position: relative;
+}
+.progress-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: rgba(10,6,18,0.96);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 50%;
+}
+.progress-ring span { position: relative; z-index: 1; font-size: 9px; font-weight: 800; }
+
+/* ================= CANVAS ================= */
+#annotationLayer {
+  position: fixed;
+  top: 64px;
+  left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+  touch-action: none;
+  display: block;
+}
+#annotationLayer.draw-active { pointer-events: auto; cursor: crosshair; }
+
+/* ================= SLIDES ================= */
+.slides {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: manipulation;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px clamp(40px, 8vw, 140px) 200px;
+}
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #4a3a55; border-radius: 6px; }
+
+.slide {
+  display: none;
+  animation: fadeUp .4s ease;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  padding: 40px;
+  border-radius: 30px;
+  background: rgba(22,16,31,.95);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+.slide.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+h2 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; margin-top: 24px; }
+p { color: var(--text-dim); font-size: 15px; line-height: 1.65; margin-bottom: 14px; }
+
+/* ================= CARDS ================= */
+.card {
+  background: var(--paper);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.card.purple { border-color: #a78bfa; box-shadow: 0 0 24px rgba(167,139,250,.15); }
+.card.cyan { border-color: #22d3ee; box-shadow: 0 0 24px rgba(34,211,238,.15); }
+.card.green { border-color: #4ade80; box-shadow: 0 0 24px rgba(74,222,128,.15); }
+.card.yellow { border-color: #facc15; box-shadow: 0 0 24px rgba(250,204,21,.15); }
+.card.pink { border-color: #f472b6; box-shadow: 0 0 24px rgba(244,114,182,.15); }
+.card.orange { border-color: #fb923c; box-shadow: 0 0 24px rgba(251,146,60,.15); }
+.card.red { border-color: #f87171; box-shadow: 0 0 24px rgba(248,113,113,.15); }
+
+.card-label {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.card-label.cyan { color: var(--accent-2); }
+.card-label.green { color: var(--green); }
+.card-label.yellow { color: var(--yellow); }
+.card-label.pink { color: var(--pink); }
+.card-label.orange { color: var(--orange); }
+.card-label.red { color: var(--red); }
+
+.pill {
+  display: inline-block;
+  background: rgba(255,255,255,.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 13px;
+  color: var(--accent-2);
+  margin: 0 2px;
+}
+
+/* ================= PA CANVAS ================= */
+.pa-canvas-wrap {
+  background: var(--paper-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+.pa-canvas {
+  background: var(--pa-canvas);
+  border-radius: 16px;
+  padding: 40px 24px;
+  background-image:
+    radial-gradient(circle, #d2d0ce 1px, transparent 1px),
+    radial-gradient(circle, #d2d0ce 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  min-width: 520px;
+}
+.pa-action {
+  background: var(--pa-card);
+  border-radius: 8px;
+  border: 1px solid var(--pa-border);
+  box-shadow: 0 1.6px 3.6px rgba(0,0,0,.08);
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+.pa-action + .pa-action { margin-top: 34px; }
+.pa-action-left-bar { width: 4px; flex-shrink: 0; background: var(--trigger); }
+.pa-action.control .pa-action-left-bar { background: var(--control); }
+.pa-action.data .pa-action-left-bar { background: var(--data); }
+.pa-action.http .pa-action-left-bar { background: var(--http); }
+.pa-action.error .pa-action-left-bar { background: var(--error); }
+.pa-action-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin: 12px 0 12px 12px; font-size: 20px; }
+.pa-action-body { flex: 1; padding: 12px 16px 14px 8px; min-width: 0; }
+.pa-action-connector { font-size: 11px; color: var(--pa-text-dim); margin-bottom: 4px; font-weight: 600; }
+.pa-action-name { font-size: 13px; font-weight: 600; color: var(--pa-text); margin-bottom: 6px; line-height: 1.3; }
+.pa-action-fields { display: flex; flex-direction: column; gap: 4px; }
+.pa-field { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.pa-field-label { color: var(--pa-text-dim); min-width: 60px; }
+.pa-field-value {
+  color: var(--pa-text);
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  background: #f3f2f1;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pa-connector-line { width: 2px; height: 24px; background: #c8c6c4; margin: 0 auto; position: relative; }
+.pa-connector-line::after { content: '▼'; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); color: #c8c6c4; font-size: 8px; line-height: 1; }
+.pa-success-tick {
+  position: absolute; right: -10px; top: 12px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #dff6dd;
+  color: #107c10;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* ================= RUN HISTORY ================= */
+.pa-run {
+  background: var(--pa-card);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--pa-border);
+  font-family: 'Segoe UI',sans-serif;
+}
+.pa-run-header {
+  padding: 16px 20px;
+  background: #faf9f8;
+  border-bottom: 1px solid var(--pa-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.pa-run-status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--pa-text); font-weight: 600; }
+.pa-run-status .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #107c10; }
+.pa-run-status .status-dot.fail { background: #d13438; }
+.pa-run-meta { font-size: 12px; color: var(--pa-text-dim); display: flex; gap: 16px; }
+.pa-run-timeline { padding: 12px 20px 20px; }
+.pa-run-step { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--pa-border); font-size: 13px; }
+.pa-run-step:last-child { border-bottom: none; }
+.pa-run-step .step-icon { width: 22px; height: 22px; border-radius: 50%; background: #dff6dd; color: #107c10; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.pa-run-step .step-icon.fail { background: #fde7e9; color: #d13438; }
+.pa-run-step .step-name { flex: 1; min-width: 0; color: var(--pa-text); }
+.pa-run-step .step-time { color: var(--pa-text-dim); font-size: 11px; }
+
+.pa-run-io {
+  margin-top: 16px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #d4d4d4;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.pa-run-io .label { color: #569cd6; font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; display: block; }
+.pa-run-io .k { color: #9cdcfe; }
+.pa-run-io .s { color: #ce9178; }
+.pa-run-io .n { color: #b5cea8; }
+.pa-run-io .b { color: #569cd6; }
+.pa-run-io .punct { color: #d4d4d4; }
+.pa-run-io .section { margin-bottom: 14px; }
+.pa-run-io .section:last-child { margin-bottom: 0; }
+
+/* ================= CHIPS PANEL ================= */
+.pa-dynamic {
+  background: var(--pa-card);
+  border-radius: 10px;
+  border: 1px solid var(--pa-border);
+  overflow: hidden;
+  font-family: 'Segoe UI',sans-serif;
+  max-width: 400px;
+}
+.pa-dynamic-header { padding: 10px 14px; border-bottom: 1px solid var(--pa-border); background: #faf9f8; font-size: 12px; font-weight: 600; color: var(--pa-text); display: flex; align-items: center; gap: 8px; }
+.pa-dynamic-search { padding: 8px 12px; border-bottom: 1px solid var(--pa-border); }
+.pa-dynamic-search input { width: 100%; background: #faf9f8; border: 1px solid var(--pa-border); border-radius: 4px; padding: 6px 10px; font-family: inherit; font-size: 12px; color: var(--pa-text); outline: none; }
+.pa-dynamic-list { padding: 8px 0; max-height: 260px; overflow-y: auto; }
+.pa-dynamic-group { padding: 6px 14px 10px; }
+.pa-dynamic-group-title { font-size: 11px; font-weight: 600; color: var(--pa-text-dim); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.pa-dynamic-group-title::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: #0078d4; }
+.pa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pa-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(180deg, #e8f3ff, #d9ecff);
+  border: 1px solid #b3d9ff;
+  color: #0078d4;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Segoe UI',sans-serif;
+}
+.pa-chip::before { content: '⊞'; font-size: 9px; opacity: 0.7; }
+
+/* ================= EXPRESSION EDITOR ================= */
+.pa-expr { background: #252526; border-radius: 10px; overflow: hidden; border: 1px solid #3e3e42; }
+.pa-expr-header { padding: 12px 16px; background: #2d2d30; border-bottom: 1px solid #3e3e42; font-size: 12px; color: #cccccc; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.pa-expr-header::before { content: 'ƒ'; font-style: italic; color: #569cd6; font-size: 16px; }
+.pa-expr-input { padding: 16px; background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas','Courier New',monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; white-space: pre; }
+.pa-expr-input .fn { color: #dcdcaa; }
+.pa-expr-input .str { color: #ce9178; }
+.pa-expr-input .punct { color: #d4d4d4; }
+.pa-expr-input .var { color: #9cdcfe; }
+
+/* ================= TRANSFORM ================= */
+.pa-transform {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+.pa-transform-stage { text-align: center; }
+.pa-transform-stage-label { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+.pa-transform-box {
+  background: #0a0612;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #d4d4d4;
+  line-height: 1.7;
+  text-align: left;
+  min-height: 120px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.pa-transform-box .k { color: #9cdcfe; }
+.pa-transform-box .s { color: #ce9178; }
+.pa-transform-box .n { color: #b5cea8; }
+.pa-transform-box .b { color: #569cd6; }
+.pa-transform-box .punct { color: #d4d4d4; }
+.pa-transform-arrow { font-size: 24px; color: var(--accent); font-weight: 700; }
+.pa-transform-action {
+  background: linear-gradient(135deg, #0078d4, #4a90e2);
+  color: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0,120,212,.3);
+}
+.pa-transform-action .icon { font-size: 28px; margin-bottom: 6px; }
+.pa-transform-action .name { font-size: 13px; font-weight: 700; }
+.pa-transform-chips {
+  background: #0a0612;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 120px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-content: flex-start;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.pa-transform-chips .pa-chip { background: linear-gradient(180deg, #1e3a5f, #16304a); border-color: #2d5f8f; color: #7dd3fc; }
+
+/* ================= ERROR VIEWER ================= */
+.pa-error { background: var(--pa-card); border-radius: 10px; border: 1px solid var(--pa-border); overflow: hidden; max-width: 620px; }
+.pa-error-header { background: #fde7e9; padding: 14px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f3b8bc; }
+.pa-error-icon { width: 28px; height: 28px; border-radius: 50%; background: #d13438; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.pa-error-title { font-size: 14px; font-weight: 700; color: #a4262c; }
+.pa-error-code { font-size: 11px; color: #a4262c; font-family: 'Consolas','Courier New',monospace; margin-top: 2px; }
+.pa-error-body { padding: 16px 18px; background: white; }
+.pa-error-msg { font-size: 13px; color: var(--pa-text); line-height: 1.6; margin-bottom: 12px; }
+.pa-error-msg code { background: #f3f2f1; padding: 2px 6px; border-radius: 3px; font-family: 'Consolas','Courier New',monospace; font-size: 12px; color: #a4262c; }
+.pa-error-details { font-size: 11px; color: var(--pa-text-dim); padding: 10px 12px; background: #faf9f8; border-radius: 6px; font-family: 'Consolas','Courier New',monospace; line-height: 1.6; }
+
+/* ================= SANDBOX ================= */
+.pa-sandbox { background: var(--paper-2); border: 2px solid var(--accent); border-radius: 20px; padding: 24px; }
+.pa-sandbox-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.pa-sandbox-badge {
+  background: rgba(34,211,238,.12);
+  color: #22d3ee;
+  border: 1px solid rgba(34,211,238,.4);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.pa-sandbox-title { font-size: 16px; font-weight: 700; }
+.pa-sandbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pa-sandbox-grid textarea, .pa-sandbox-grid input {
+  width: 100%;
+  background: #0a0612;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #d4d4d4;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  min-height: 160px;
+}
+.pa-sandbox-grid input { min-height: 0; }
+.pa-sandbox-grid textarea:focus, .pa-sandbox-grid input:focus { border-color: rgba(34,211,238,.5); }
+.pa-sandbox-btn {
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: transform .15s;
+}
+.pa-sandbox-btn:hover { transform: scale(1.02); }
+.pa-sandbox-result {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #0a0612;
+  border: 1px solid rgba(34,211,238,.3);
+  border-radius: 10px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #7dd3fc;
+  line-height: 1.7;
+  min-height: 60px;
+  overflow-x: auto;
+}
+.pa-sandbox-result pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; font-family: inherit; }
+
+/* ================= QUIZ ================= */
+.quiz-q { background: var(--paper); border: 2px solid var(--border); border-radius: 16px; padding: 22px; margin-bottom: 18px; }
+.quiz-q .question { font-weight: 700; font-size: 15px; margin-bottom: 16px; }
+.quiz-option {
+  background: var(--paper-2);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 2px solid transparent;
+  transition: all .2s;
+}
+.quiz-option:hover { border-color: rgba(255,255,255,.15); }
+.quiz-option.correct { background: rgba(74,222,128,.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; opacity: .6; }
+
+/* ================= ACCORDION ================= */
+.accordion { background: var(--paper); border: 2px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; cursor: pointer; }
+.accordion.open { border-color: var(--accent); }
+.accordion-header { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
+.accordion-header .arrow { color: var(--text-dim); transition: transform .3s; font-size: 14px; }
+.accordion.open .accordion-header .arrow { transform: rotate(180deg); color: var(--accent); }
+.accordion-body { max-height: 0; overflow: hidden; transition: max-height .4s, padding .3s; padding: 0 20px; color: var(--text-dim); font-size: 14px; line-height: 1.7; }
+.accordion.open .accordion-body { max-height: 500px; padding: 0 20px 20px; }
+
+/* ================= TAKEAWAY / WARNING ================= */
+.takeaway {
+  background: linear-gradient(135deg, rgba(74,222,128,.12), rgba(34,211,238,.08));
+  border-left: 5px solid var(--green);
+  border-top: 2px solid rgba(74,222,128,.25);
+  border-right: 2px solid rgba(74,222,128,.25);
+  border-bottom: 2px solid rgba(74,222,128,.25);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #d1fae5;
+}
+.takeaway strong { color: white; font-weight: 700; }
+
+.warning {
+  background: linear-gradient(135deg, rgba(248,113,113,.12), rgba(251,146,60,.08));
+  border-left: 5px solid var(--red);
+  border-top: 2px solid rgba(248,113,113,.25);
+  border-right: 2px solid rgba(248,113,113,.25);
+  border-bottom: 2px solid rgba(248,113,113,.25);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #fecaca;
+}
+
+/* ================= RECAP ================= */
+.recap-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+.recap-item .check { color: var(--green); font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+.recap-item .body { flex: 1; }
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+  .pa-transform { grid-template-columns: 1fr; }
+  .pa-transform-arrow { transform: rotate(90deg); }
+  .pa-sandbox-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  h2 { font-size: 22px; }
+  .slide { padding: 24px; }
+  .pa-canvas { padding: 24px 12px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="mini-btn" id="prevBtnHeader">←</button>
+      <button class="mini-btn" id="pencilBtnHeader" title="Pencil">✏️</button>
+      <button class="mini-btn" id="clearBtnHeader" title="Clear">🧹</button>
+    </div>
+    <div class="topbar-center">
+      <div class="center-label">
+        <div class="eyebrow">Lesson</div>
+        <div class="center-title" id="navLabel">Hook</div>
+      </div>
+    </div>
+    <div class="header-nav">
+      <div class="progress-ring" id="progressRing"><span id="progressPercent">2%</span></div>
+      <button class="mini-btn primary" id="nextBtnHeader">→</button>
+    </div>
+  </div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- 01: HOOK -->
+    <div class="slide active">
+      <div class="step-label">01 — The Hook</div>
+      <h2>Your GitHub just sent this. Now what?</h2>
+      <p>Every time someone merges a pull request, GitHub fires a webhook. It arrives in Power Automate as one giant string.</p>
+      <div class="card cyan">
+        <div class="card-label cyan">What lands in your flow</div>
+        <div class="pa-transform-box" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7;">{"action":"closed","pull_request":{"merged":true,"user":{"login":"shahabaj"},"head":{"ref":"feature/login"}},"repository":{"name":"my-app","owner":{"login":"contoso"}}}</div>
+      </div>
+      <div class="takeaway"><strong>💡 In 25 minutes:</strong> You'll parse this, extract 4 fields, and post a Teams message — in one flow.</div>
+    </div>
+
+    <!-- 02: THE PROBLEM -->
+    <div class="slide">
+      <div class="step-label">02 — The Problem</div>
+      <h2>It looks fine. It works for nothing.</h2>
+      <p>Power Automate treats the entire webhook body as a single string. You can see it. You just can't use any part of it.</p>
+      <div class="card red">
+        <div class="card-label red">You want to reference pull_request.user.login — but nothing appears</div>
+        <p style="margin-bottom:0;">Try typing the field name in a downstream action. There are no chips. No autocomplete. No way to access it.</p>
+      </div>
+      <div class="warning">
+        <strong>⚠️</strong> Without Parse JSON, the webhook is a wall of text. Every downstream action is blocked.
+      </div>
+    </div>
+
+    <!-- 03: THE PAIN -->
+    <div class="slide">
+      <div class="step-label">03 — Where this hurts</div>
+      <h2>Four scenarios — all blocked without Parse JSON</h2>
+      <div class="card purple">
+        <div class="card-label">GitHub webhooks</div>
+        <p style="margin-bottom:0;">PR merges, issues, deployments — all send raw JSON</p>
+      </div>
+      <div class="card cyan">
+        <div class="card-label cyan">Stripe payments</div>
+        <p style="margin-bottom:0;">charge.succeeded, customer.created — all raw JSON</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">Weather APIs</div>
+        <p style="margin-bottom:0;">Temperature, humidity, forecasts — all raw JSON</p>
+      </div>
+      <div class="card orange">
+        <div class="card-label orange">Jira webhooks</div>
+        <p style="margin-bottom:0;">Issue created, updated, transitioned — all raw JSON</p>
+      </div>
+    </div>
+
+    <!-- 04: THE PROMISE -->
+    <div class="slide">
+      <div class="step-label">04 — The Promise</div>
+      <h2>One action. All the fields.</h2>
+      <div class="pa-transform">
+        <div class="pa-transform-stage">
+          <div class="pa-transform-stage-label">Raw webhook</div>
+          <div class="pa-transform-box"><span class="punct">{</span><br>&nbsp;&nbsp;<span class="k">"login"</span>: <span class="s">"shahabaj"</span>,<br>&nbsp;&nbsp;<span class="k">"repo"</span>: <span class="s">"my-app"</span><br><span class="punct">}</span></div>
+        </div>
+        <div class="pa-transform-arrow">→</div>
+        <div class="pa-transform-stage">
+          <div class="pa-transform-action"><div class="icon">{ }</div><div class="name">Parse JSON</div></div>
+        </div>
+        <div class="pa-transform-arrow">→</div>
+        <div class="pa-transform-stage">
+          <div class="pa-transform-stage-label">Usable chips</div>
+          <div class="pa-transform-chips"><span class="pa-chip">login</span><span class="pa-chip">repo</span></div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡 The promise:</strong> Turn any JSON string into typed, drag-able fields — in one action.</div>
+    </div>
+
+    <!-- 05: WHAT IS PARSE JSON -->
+    <div class="slide">
+      <div class="step-label">05 — What is Parse JSON</div>
+      <h2>A translator for raw JSON</h2>
+      <p>Parse JSON reads a raw JSON string against a schema, and exposes every field as typed dynamic content.</p>
+      <div class="card cyan">
+        <div class="card-label cyan">Before</div>
+        <p style="margin-bottom:0; font-family:monospace;">{"id":1,"name":"Alice"}</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">After</div>
+        <p style="margin-bottom:0;"><span class="pill">id</span> <span class="pill">name</span> <span class="pill">email</span></p>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Parse JSON doesn't change the data. It tells Power Automate the shape.</div>
+    </div>
+
+    <!-- 06: ANATOMY -->
+    <div class="slide">
+      <div class="step-label">06 — Anatomy</div>
+      <h2>The four parts of Parse JSON</h2>
+      <div class="card cyan">
+        <div class="card-label cyan">📥 Content</div>
+        <p style="margin-bottom:0;">The raw JSON string — usually body from the previous action.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">🧬 Schema</div>
+        <p style="margin-bottom:0;">The shape definition. Power Automate generates it from a sample.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">📤 Outputs</div>
+        <p style="margin-bottom:0;">Typed dynamic content chips — one per field.</p>
+      </div>
+      <div class="card yellow">
+        <div class="card-label yellow">🔗 Downstream</div>
+        <p style="margin-bottom:0;">Access via <span class="pill">body('Parse_JSON')?['key']</span>.</p>
+      </div>
+    </div>
+
+    <!-- 07: SCHEMA -->
+    <div class="slide">
+      <div class="step-label">07 — Schema</div>
+      <h2>What a schema looks like</h2>
+      <p>A schema declares which fields exist, their types, and which are required.</p>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"type"</span>: <span class="s">"object"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"properties"</span>: <span class="punct">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"id"</span>: <span class="punct">{</span> <span class="k">"type"</span>: <span class="s">"integer"</span> <span class="punct">}</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"name"</span>: <span class="punct">{</span> <span class="k">"type"</span>: <span class="s">"string"</span> <span class="punct">}</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"active"</span>: <span class="punct">{</span> <span class="k">"type"</span>: <span class="s">"boolean"</span> <span class="punct">}</span><br>
+        &nbsp;&nbsp;<span class="punct">}</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="takeaway"><strong>💡</strong> You almost never write this by hand. Power Automate generates it.</div>
+    </div>
+
+    <!-- 08: GENERATE FROM SAMPLE -->
+    <div class="slide">
+      <div class="step-label">08 — The magic button</div>
+      <h2>Generate from sample</h2>
+      <p>Click the button. Paste a real response. Click Done. The schema appears.</p>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action data">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">{ }</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Data Operation</div>
+              <div class="pa-action-name">Parse JSON</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Content</span><span class="pa-field-value">body('HTTP')</span></div>
+                <div class="pa-field"><span class="pa-field-label">Schema</span><span class="pa-field-value">Generate from sample...</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09: SIMPLE EXAMPLE -->
+    <div class="slide">
+      <div class="step-label">09 — Example 1</div>
+      <h2>Simple object → 4 fields</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"id"</span>: <span class="n">101</span>,<br>
+        &nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Shahabaj"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"email"</span>: <span class="s">"s@example.com"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"active"</span>: <span class="b">true</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="takeaway"><strong>💡 Access any field:</strong> <span class="pill">body('Parse_JSON')?['email']</span></div>
+    </div>
+
+    <!-- 10: NESTED -->
+    <div class="slide">
+      <div class="step-label">10 — Example 2</div>
+      <h2>Nested object — chain the pattern</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"user"</span>: <span class="punct">{</span> <span class="k">"name"</span>: <span class="s">"Shahabaj"</span> <span class="punct">}</span>,<br>
+        &nbsp;&nbsp;<span class="k">"address"</span>: <span class="punct">{</span> <span class="k">"city"</span>: <span class="s">"Mumbai"</span> <span class="punct">}</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="takeaway"><strong>💡</strong> <span class="pill">body('Parse_JSON')?['address']?['city']</span></div>
+    </div>
+
+    <!-- 11: ARRAY -->
+    <div class="slide">
+      <div class="step-label">11 — Example 3</div>
+      <h2>Array of objects</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">[</span> <span class="punct">{</span> <span class="k">"id"</span>: <span class="n">1</span>, <span class="k">"name"</span>: <span class="s">"Alice"</span> <span class="punct">}</span>, <span class="punct">{</span> <span class="k">"id"</span>: <span class="n">2</span>, <span class="k">"name"</span>: <span class="s">"Bob"</span> <span class="punct">}</span> <span class="punct">]</span>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Loop with Apply to Each. Inside, use <span class="pill">item()?['name']</span>.</div>
+    </div>
+
+    <!-- 12: MIXED TYPES -->
+    <div class="slide">
+      <div class="step-label">12 — Example 4</div>
+      <h2>Mixed types — including null</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Order #101"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"amount"</span>: <span class="n">249.99</span>,<br>
+        &nbsp;&nbsp;<span class="k">"paid"</span>: <span class="b">true</span>,<br>
+        &nbsp;&nbsp;<span class="k">"discount"</span>: <span class="b">null</span>,<br>
+        &nbsp;&nbsp;<span class="k">"tags"</span>: <span class="punct">[</span><span class="s">"urgent"</span>, <span class="s">"vip"</span><span class="punct">]</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="warning"><strong>⚠️</strong> Handle null with <span class="pill">coalesce(body('Parse_JSON')?['discount'], 0)</span></div>
+    </div>
+
+    <!-- 13: WEATHER API -->
+    <div class="slide">
+      <div class="step-label">13 — Example 5</div>
+      <h2>Real weather API response</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"location"</span>: <span class="s">"Mumbai"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"temperature"</span>: <span class="n">32</span>,<br>
+        &nbsp;&nbsp;<span class="k">"condition"</span>: <span class="s">"Sunny"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"forecast"</span>: <span class="punct">[</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="punct">{</span> <span class="k">"day"</span>: <span class="s">"Mon"</span>, <span class="k">"high"</span>: <span class="n">34</span> <span class="punct">}</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="punct">{</span> <span class="k">"day"</span>: <span class="s">"Tue"</span>, <span class="k">"high"</span>: <span class="n">33</span> <span class="punct">}</span><br>
+        &nbsp;&nbsp;<span class="punct">]</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="takeaway">Forecast is an array. Loop through it with Apply to Each.</div>
+    </div>
+
+    <!-- 14: DESIGNER WALKTHROUGH -->
+    <div class="slide">
+      <div class="step-label">14 — In the designer</div>
+      <h2>Real flow, real steps</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action http">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">🌐</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">HTTP</div>
+              <div class="pa-action-name">HTTP — Get weather</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Method</span><span class="pa-field-value">GET</span></div>
+                <div class="pa-field"><span class="pa-field-label">URI</span><span class="pa-field-value">https://api.openweathermap.org/...</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">{ }</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Data Operation</div>
+              <div class="pa-action-name">Parse JSON — Weather</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Content</span><span class="pa-field-value">body('HTTP_Get_weather')</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action">
+            <div class="pa-action-left-bar" style="background:#6264a7"></div>
+            <div class="pa-action-icon" style="color:#6264a7">💬</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Microsoft Teams</div>
+              <div class="pa-action-name">Post message in a chat or channel</div>
+              <div class="pa-action-fields">
+                <div class="pa-field"><span class="pa-field-label">Message</span><span class="pa-field-value">Weather: 32°C, Sunny</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 15: ACCESS PATTERNS -->
+    <div class="slide">
+      <div class="step-label">15 — Reference patterns</div>
+      <h2>Every way to access parsed fields</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="k">// Top-level</span><br>
+        body('Parse_JSON')?['name']<br><br>
+        <span class="k">// Nested</span><br>
+        body('Parse_JSON')?['user']?['email']<br><br>
+        <span class="k">// Inside Apply to Each</span><br>
+        item()?['amount']<br><br>
+        <span class="k">// Array index</span><br>
+        body('Parse_JSON')?['tags']?[0]<br><br>
+        <span class="k">// With fallback</span><br>
+        coalesce(body('Parse_JSON')?['discount'], 0)
+      </div>
+      <div class="takeaway"><strong>💡</strong> Memorize these five. They cover 95% of real cases.</div>
+    </div>
+
+    <!-- 16: UC1 HTTP -->
+    <div class="slide">
+      <div class="step-label">16 — Use case 1</div>
+      <h2>Parse JSON after HTTP</h2>
+      <p>The #1 use case. Every HTTP GET or POST that returns JSON should have Parse JSON right after it.</p>
+      <div class="card cyan"><div class="card-label cyan">Pattern</div><p style="margin-bottom:0;">HTTP → Parse JSON → use fields anywhere below</p></div>
+      <div class="takeaway"><strong>💡</strong> Rule: if the response is JSON, parse it immediately.</div>
+    </div>
+
+    <!-- 17: UC2 Custom connectors -->
+    <div class="slide">
+      <div class="step-label">17 — Use case 2</div>
+      <h2>Parse custom connector output</h2>
+      <p>Custom connectors often return raw JSON you need to parse before use.</p>
+      <div class="card purple"><div class="card-label">Pattern</div><p style="margin-bottom:0;">Custom connector → Parse JSON → downstream actions</p></div>
+    </div>
+
+    <!-- 18: UC3 Webhooks -->
+    <div class="slide">
+      <div class="step-label">18 — Use case 3</div>
+      <h2>Parse webhook payloads</h2>
+      <p>Webhooks send JSON. Parse it before triggering downstream logic.</p>
+      <div class="card green"><div class="card-label green">Pattern</div><p style="margin-bottom:0;">Webhook trigger → Parse JSON → Condition or loop</p></div>
+    </div>
+
+    <!-- 19: UC4 Dataverse -->
+    <div class="slide">
+      <div class="step-label">19 — Use case 4</div>
+      <h2>Parse Dataverse responses</h2>
+      <p>Custom Dataverse calls return JSON. Parse before you loop or filter.</p>
+      <div class="card orange"><div class="card-label orange">Pattern</div><p style="margin-bottom:0;">Dataverse HTTP → Parse JSON → Filter Array → Apply to Each</p></div>
+    </div>
+
+    <!-- 20: UC5 Excel -->
+    <div class="slide">
+      <div class="step-label">20 — Use case 5</div>
+      <h2>Parse JSON for Excel or CSV export</h2>
+      <p>Once parsed, use Select to shape the fields and Create CSV table to export.</p>
+      <div class="card pink"><div class="card-label pink">Pattern</div><p style="margin-bottom:0;">Parse JSON → Select → Create CSV table → SharePoint</p></div>
+    </div>
+
+    <!-- 21: COMPARE -->
+    <div class="slide">
+      <div class="step-label">21 — Compare</div>
+      <h2>Parse JSON vs Compose</h2>
+      <div class="card cyan"><div class="card-label cyan">Parse JSON</div><p style="margin-bottom:0;">Reads the shape. Interprets JSON structure. Needs a schema.</p></div>
+      <div class="card pink"><div class="card-label pink">Compose</div><p style="margin-bottom:0;">Holds a value. Static. Perfect for building JSON.</p></div>
+      <div class="takeaway"><strong>💡</strong> Compose writes JSON. Parse JSON reads it.</div>
+    </div>
+
+    <!-- 22-24: GITHUB WEBHOOK FULL -->
+    <div class="slide">
+      <div class="step-label">22 — Real scenario 1</div>
+      <h2>GitHub webhook — the payload</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:11px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"action"</span>: <span class="s">"closed"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"pull_request"</span>: <span class="punct">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"merged"</span>: <span class="b">true</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"user"</span>: <span class="punct">{</span> <span class="k">"login"</span>: <span class="s">"shahabaj"</span> <span class="punct">}</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"head"</span>: <span class="punct">{</span> <span class="k">"ref"</span>: <span class="s">"feature/login"</span> <span class="punct">}</span><br>
+        &nbsp;&nbsp;<span class="punct">}</span>,<br>
+        &nbsp;&nbsp;<span class="k">"repository"</span>: <span class="punct">{</span> <span class="k">"name"</span>: <span class="s">"my-app"</span> <span class="punct">}</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="takeaway">Real GitHub webhook. Nested. Real fields developers need.</div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">23 — Real scenario 1</div>
+      <h2>GitHub webhook — the flow</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action http">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">🔔</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Request</div>
+              <div class="pa-action-name">When a HTTP request is received</div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">{ }</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Data Operation</div>
+              <div class="pa-action-name">Parse JSON — PR merge</div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action control">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">🔀</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Control</div>
+              <div class="pa-action-name">Condition — merged is true</div>
+            </div>
+          </div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action">
+            <div class="pa-action-left-bar" style="background:#6264a7"></div>
+            <div class="pa-action-icon" style="color:#6264a7">💬</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">Microsoft Teams</div>
+              <div class="pa-action-name">Post message — PR merged</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">24 — Real scenario 1</div>
+      <h2>GitHub webhook — the result</h2>
+      <div class="pa-run">
+        <div class="pa-run-header">
+          <div class="pa-run-status"><span class="status-dot"></span>Succeeded</div>
+          <div class="pa-run-meta"><span>Just now</span><span>1.8s</span></div>
+        </div>
+        <div class="pa-run-timeline">
+          <div class="pa-run-step"><span class="step-icon">✓</span><span class="step-name">When a HTTP request is received</span><span class="step-time">0.1s</span></div>
+          <div class="pa-run-step"><span class="step-icon">✓</span><span class="step-name">Parse JSON — PR merge</span><span class="step-time">0.3s</span></div>
+          <div class="pa-run-step"><span class="step-icon">✓</span><span class="step-name">Condition — merged is true</span><span class="step-time">0.1s</span></div>
+          <div class="pa-run-step"><span class="step-icon">✓</span><span class="step-name">Post message — PR merged</span><span class="step-time">1.3s</span></div>
+          <div class="pa-run-io">
+            <div class="section"><span class="label">Teams message sent</span><span class="s">"🎉 PR #142 merged by @shahabaj — feature/login"</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 25-27: STRIPE -->
+    <div class="slide">
+      <div class="step-label">25 — Real scenario 2</div>
+      <h2>Stripe payment — the payload</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:11px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"type"</span>: <span class="s">"charge.succeeded"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"data"</span>: <span class="punct">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"object"</span>: <span class="punct">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"amount"</span>: <span class="n">4999</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"currency"</span>: <span class="s">"usd"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"customer"</span>: <span class="s">"cus_NffrFeUfNV2Hib"</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="punct">}</span><br>
+        &nbsp;&nbsp;<span class="punct">}</span><br>
+        <span class="punct">}</span>
+      </div>
+      <div class="takeaway">Amount is in cents. Currency is a string. Customer is an ID. Parse all three.</div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">26 — Real scenario 2</div>
+      <h2>Stripe payment — extract fields</h2>
+      <div class="pa-dynamic">
+        <div class="pa-dynamic-header"><span>⚡</span><span>Dynamic content — Parse JSON</span></div>
+        <div class="pa-dynamic-list">
+          <div class="pa-dynamic-group">
+            <div class="pa-dynamic-group-title">data</div>
+            <div class="pa-chips"><span class="pa-chip">object</span></div>
+          </div>
+          <div class="pa-dynamic-group">
+            <div class="pa-dynamic-group-title">data.object</div>
+            <div class="pa-chips"><span class="pa-chip">amount</span><span class="pa-chip">currency</span><span class="pa-chip">customer</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">27 — Real scenario 2</div>
+      <h2>Stripe payment — full automation</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action http"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🔔</div><div class="pa-action-body"><div class="pa-action-connector">Request</div><div class="pa-action-name">When Stripe webhook fires</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">{ }</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Parse JSON — Stripe charge</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action control"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🔀</div><div class="pa-action-body"><div class="pa-action-connector">Control</div><div class="pa-action-name">Condition — amount > 1000</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action"><div class="pa-action-left-bar" style="background:#0078d4"></div><div class="pa-action-icon" style="color:#0078d4">✉️</div><div class="pa-action-body"><div class="pa-action-connector">Outlook</div><div class="pa-action-name">Send email — Big payment alert</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 28-30: WEATHER -->
+    <div class="slide">
+      <div class="step-label">28 — Real scenario 3</div>
+      <h2>Weather API — the payload</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"location"</span>: <span class="s">"Mumbai"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"temperature"</span>: <span class="n">32</span>,<br>
+        &nbsp;&nbsp;<span class="k">"humidity"</span>: <span class="n">78</span>,<br>
+        &nbsp;&nbsp;<span class="k">"condition"</span>: <span class="s">"Sunny"</span><br>
+        <span class="punct">}</span>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">29 — Real scenario 3</div>
+      <h2>Weather API — parse + alert</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action" style="border-left:none"><div class="pa-action-left-bar" style="background:#8764b8"></div><div class="pa-action-icon">⏰</div><div class="pa-action-body"><div class="pa-action-connector">Schedule</div><div class="pa-action-name">Recurrence — Every day at 9 AM</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action http"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🌐</div><div class="pa-action-body"><div class="pa-action-connector">HTTP</div><div class="pa-action-name">HTTP — Get weather</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">{ }</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Parse JSON — Weather</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action control"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🔀</div><div class="pa-action-body"><div class="pa-action-connector">Control</div><div class="pa-action-name">Condition — temp > 30</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">30 — Real scenario 3</div>
+      <h2>Weather API — the alert</h2>
+      <div class="pa-run">
+        <div class="pa-run-header"><div class="pa-run-status"><span class="status-dot"></span>Succeeded</div><div class="pa-run-meta"><span>Today 9:00 AM</span></div></div>
+        <div class="pa-run-timeline">
+          <div class="pa-run-io">
+            <div class="section"><span class="label">Teams message</span><span class="s">"⚠️ Mumbai: 32°C, Sunny. Humidity 78%. Stay hydrated."</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 31-32: JIRA -->
+    <div class="slide">
+      <div class="step-label">31 — Real scenario 4</div>
+      <h2>Jira webhook — the payload</h2>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:11px; line-height:1.7; color:#d4d4d4;">
+        <span class="punct">{</span><br>
+        &nbsp;&nbsp;<span class="k">"webhookEvent"</span>: <span class="s">"jira:issue_created"</span>,<br>
+        &nbsp;&nbsp;<span class="k">"issue"</span>: <span class="punct">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"key"</span>: <span class="s">"PROJ-142"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"fields"</span>: <span class="punct">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"summary"</span>: <span class="s">"Login page broken on mobile"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"priority"</span>: <span class="punct">{</span> <span class="k">"name"</span>: <span class="s">"High"</span> <span class="punct">}</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="punct">}</span><br>
+        &nbsp;&nbsp;<span class="punct">}</span><br>
+        <span class="punct">}</span>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">32 — Real scenario 4</div>
+      <h2>Jira webhook — extract + notify</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action http"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🔔</div><div class="pa-action-body"><div class="pa-action-connector">Request</div><div class="pa-action-name">When a HTTP request is received</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">{ }</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Parse JSON — Jira issue</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action control"><div class="pa-action-left-bar"></div><div class="pa-action-icon">🔀</div><div class="pa-action-body"><div class="pa-action-connector">Control</div><div class="pa-action-name">Condition — priority is High</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action"><div class="pa-action-left-bar" style="background:#6264a7"></div><div class="pa-action-icon" style="color:#6264a7">💬</div><div class="pa-action-body"><div class="pa-action-connector">Microsoft Teams</div><div class="pa-action-name">Post message in a chat or channel</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 33-38: ACCESS PATTERNS DEEP -->
+    <div class="slide">
+      <div class="step-label">33 — Pattern 1</div>
+      <h2>Top-level fields</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression</div>
+        <div class="pa-expr-input"><span class="var">body</span><span class="punct">(</span><span class="str">'Parse_JSON'</span><span class="punct">)?[</span><span class="str">'name'</span><span class="punct">]</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">34 — Pattern 2</div>
+      <h2>Nested fields</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression</div>
+        <div class="pa-expr-input"><span class="var">body</span><span class="punct">(</span><span class="str">'Parse_JSON'</span><span class="punct">)?[</span><span class="str">'user'</span><span class="punct">]?[</span><span class="str">'email'</span><span class="punct">]</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">35 — Pattern 3</div>
+      <h2>Array items with Apply to Each</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression inside the loop</div>
+        <div class="pa-expr-input"><span class="var">item</span><span class="punct">()?[</span><span class="str">'name'</span><span class="punct">]</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">36 — Pattern 4</div>
+      <h2>Array index — access a specific position</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression</div>
+        <div class="pa-expr-input"><span class="var">body</span><span class="punct">(</span><span class="str">'Parse_JSON'</span><span class="punct">)?[</span><span class="str">'tags'</span><span class="punct">]?[</span><span class="str">0</span><span class="punct">]</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">37 — Pattern 5</div>
+      <h2>Null handling with coalesce</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression</div>
+        <div class="pa-expr-input"><span class="fn">coalesce</span><span class="punct">(</span><span class="var">body</span><span class="punct">(</span><span class="str">'Parse_JSON'</span><span class="punct">)?[</span><span class="str">'phone'</span><span class="punct">], </span><span class="str">'Not provided'</span><span class="punct">)</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">38 — Compose chaining</div>
+      <h2>Combine with Compose for multi-step transformations</h2>
+      <div class="pa-canvas-wrap">
+        <div class="pa-canvas">
+          <div class="pa-action data"><div class="pa-action-left-bar"></div><div class="pa-action-icon">{ }</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Parse JSON — User response</div></div></div>
+          <div class="pa-connector-line"></div>
+          <div class="pa-action"><div class="pa-action-left-bar" style="background:#0078d4"></div><div class="pa-action-icon" style="color:#0078d4">⚡</div><div class="pa-action-body"><div class="pa-action-connector">Data Operation</div><div class="pa-action-name">Compose — Full name</div><div class="pa-action-fields"><div class="pa-field"><span class="pa-field-label">Inputs</span><span class="pa-field-value">concat(body('Parse_JSON')?['first'], ' ', body('Parse_JSON')?['last'])</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 39-44: ERRORS -->
+    <div class="slide">
+      <div class="step-label">39 — Error 1</div>
+      <h2>Wrong schema type</h2>
+      <p>You selected object but the response is actually an array.</p>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Invalid template</div><div class="pa-error-code">InvalidTemplate · 400</div></div></div>
+        <div class="pa-error-body">
+          <div class="pa-error-msg">Expected object but got array at path <code>body</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">40 — Error 2</div>
+      <h2>Malformed JSON</h2>
+      <div class="pa-error">
+        <div class="pa-error-header"><div class="pa-error-icon">✕</div><div><div class="pa-error-title">Unable to parse the JSON</div><div class="pa-error-code">Unexpected token at position 17</div></div></div>
+        <div class="pa-error-body">
+          <div class="pa-error-details">{"name": "Alice",}<br>-----------------^<br>Expected a string key</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">41 — Error 3</div>
+      <h2>Empty response guard</h2>
+      <p>Wrap Parse JSON in a Condition to check the response isn't empty first.</p>
+      <div class="card yellow"><div class="card-label yellow">Fix</div><p style="margin-bottom:0;"><span class="pill">empty(body('HTTP'))</span> — put this in a Condition before Parse JSON.</p></div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">42 — Edge case</div>
+      <h2>Bot accounts in GitHub</h2>
+      <p>Sometimes PRs are merged by bots. <span class="pill">user.login</span> becomes "github-actions[bot]".</p>
+      <div class="pa-run-io" style="background:#0a0612; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.7; color:#d4d4d4;">
+        <span class="k">Condition:</span> <span class="var">not</span><span class="punct">(</span><span class="fn">endsWith</span><span class="punct">(</span><span class="var">body</span><span class="punct">(</span><span class="str">'Parse_JSON'</span><span class="punct">)?[</span><span class="str">'user'</span><span class="punct">]?[</span><span class="str">'login'</span><span class="punct">], </span><span class="str">'[bot]'</span><span class="punct">))</span>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">43 — Edge case</div>
+      <h2>Missing fields — use coalesce</h2>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression</div>
+        <div class="pa-expr-input"><span class="fn">coalesce</span><span class="punct">(</span><span class="var">body</span><span class="punct">(</span><span class="str">'Parse_JSON'</span><span class="punct">)?[</span><span class="str">'phone'</span><span class="punct">], </span><span class="str">'N/A'</span><span class="punct">)</span></div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">44 — Edge case</div>
+      <h2>Rate limits — configure retry policy</h2>
+      <p>Inside your HTTP action settings, set retry policy to <span class="pill">Exponential</span>.</p>
+      <div class="card cyan"><div class="card-label cyan">Settings → Retry Policy</div><p style="margin-bottom:0;">Type: Exponential · Count: 4 · Interval: PT10S</p></div>
+    </div>
+
+    <!-- 45-47: SANDBOXES -->
+    <div class="slide">
+      <div class="step-label">45 — Sandbox 1</div>
+      <h2>Try it — generate a schema</h2>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header"><span class="pa-sandbox-badge">Interactive</span><span class="pa-sandbox-title">Paste JSON → see schema</span></div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <textarea id="sandbox1-input">{
+  "id": 101,
+  "name": "Shahabaj",
+  "email": "s@example.com",
+  "roles": ["Admin", "Developer"]
+}</textarea>
+            <button class="pa-sandbox-btn" onclick="sandboxJSON()">Generate schema →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="sandbox1-output">Schema will appear here...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">46 — Sandbox 2</div>
+      <h2>Try it — expression tester</h2>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header"><span class="pa-sandbox-badge">Interactive</span><span class="pa-sandbox-title">Type an expression → see result</span></div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <textarea id="sandbox2-input" style="min-height:80px;">concat('Hello, ', 'World')</textarea>
+            <button class="pa-sandbox-btn" onclick="sandboxExpr()">Evaluate →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="sandbox2-output">Try: concat, toUpper, length</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="step-label">47 — Sandbox 3</div>
+      <h2>Try it — flow puzzle</h2>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header"><span class="pa-sandbox-badge">Interactive</span><span class="pa-sandbox-title">Drag actions into the correct order</span></div>
+        <div class="pa-puzzle" id="puzzle" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="pa-puzzle-piece control" draggable="true" style="background:white; border-radius:8px; padding:12px 16px; color:#201f1e; border-left:4px solid #8764b8; box-shadow:0 2px 6px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; cursor:grab;"><span style="color:#c8c6c4; font-size:16px;">⋮⋮</span><span style="flex:1; font-weight:600;">Condition — merged is true</span><span style="background:#f3f2f1; color:#605e5c; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px;">?</span></div>
+          <div class="pa-puzzle-piece trigger" draggable="true" style="background:white; border-radius:8px; padding:12px 16px; color:#201f1e; border-left:4px solid #0078d4; box-shadow:0 2px 6px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; cursor:grab;"><span style="color:#c8c6c4; font-size:16px;">⋮⋮</span><span style="flex:1; font-weight:600;">When a HTTP request is received</span><span style="background:#f3f2f1; color:#605e5c; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px;">?</span></div>
+          <div class="pa-puzzle-piece http" draggable="true" style="background:white; border-radius:8px; padding:12px 16px; color:#201f1e; border-left:4px solid #038387; box-shadow:0 2px 6px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; cursor:grab;"><span style="color:#c8c6c4; font-size:16px;">⋮⋮</span><span style="flex:1; font-weight:600;">Post Teams message</span><span style="background:#f3f2f1; color:#605e5c; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px;">?</span></div>
+          <div class="pa-puzzle-piece data" draggable="true" style="background:white; border-radius:8px; padding:12px 16px; color:#201f1e; border-left:4px solid #107c10; box-shadow:0 2px 6px rgba(0,0,0,.08); display:flex; align-items:center; gap:12px; cursor:grab;"><span style="color:#c8c6c4; font-size:16px;">⋮⋮</span><span style="flex:1; font-weight:600;">Parse JSON — PR merge</span><span style="background:#f3f2f1; color:#605e5c; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px;">?</span></div>
+        </div>
+        <button class="pa-sandbox-btn" onclick="checkPuzzle()">Check order</button>
+        <div class="pa-sandbox-result" id="puzzle-result" style="margin-top:14px;">Drag the pieces into the correct order and click Check.</div>
+      </div>
+    </div>
+
+    <!-- 48: BEST PRACTICES -->
+    <div class="slide">
+      <div class="step-label">48 — Best practices</div>
+      <h2>Write clean Parse JSON actions</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:2; font-size:15px;">
+        <li>Rename every action — <span class="pill">Parse_Weather</span> not <span class="pill">Parse_JSON</span></li>
+        <li>Generate the schema from a real, complete response</li>
+        <li>Store the sample in a comment or doc</li>
+        <li>Test with empty or malformed responses</li>
+        <li>Use <span class="pill">?['key']</span> for optional fields</li>
+        <li>Validate before parsing when possible</li>
+      </ul>
+    </div>
+
+    <!-- 49: QUIZ -->
+    <div class="slide">
+      <div class="step-label">49 — Quiz</div>
+      <h2>Does it stick?</h2>
+      <div class="quiz-q">
+        <div class="question">1. What does Parse JSON do?</div>
+        <div class="quiz-option" onclick="answer(this, false)">Converts a string to a number</div>
+        <div class="quiz-option" onclick="answer(this, true)">Turns raw JSON into typed dynamic content</div>
+        <div class="quiz-option" onclick="answer(this, false)">Sends data to an API</div>
+      </div>
+      <div class="quiz-q">
+        <div class="question">2. How do you reference a top-level field?</div>
+        <div class="quiz-option" onclick="answer(this, false)">outputs('Parse_JSON')?['name']</div>
+        <div class="quiz-option" onclick="answer(this, true)">body('Parse_JSON')?['name']</div>
+        <div class="quiz-option" onclick="answer(this, false)">triggerBody()?['name']</div>
+      </div>
+      <div class="quiz-q">
+        <div class="question">3. Inside Apply to Each, how do you access the current item?</div>
+        <div class="quiz-option" onclick="answer(this, false)">body('Parse_JSON')?['name']</div>
+        <div class="quiz-option" onclick="answer(this, true)">item()?['name']</div>
+        <div class="quiz-option" onclick="answer(this, false)">current()?['name']</div>
+      </div>
+    </div>
+
+    <!-- 50: RECAP -->
+    <div class="slide">
+      <div class="step-label">50 — Recap</div>
+      <h2>What you now know</h2>
+      <div class="card" style="border-color:#a78bfa;">
+        <div class="recap-item"><div class="check">✔</div><div class="body"><strong>Parse JSON</strong> turns raw strings into typed dynamic content.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">It needs <strong>Content</strong> (raw JSON) and a <strong>Schema</strong> (shape definition).</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Use <strong>Generate from sample</strong> with a real, complete response.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Top-level: <span class="pill">body('Parse_JSON')?['key']</span>. Nested: chain <span class="pill">?['key']</span>.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Arrays go through Apply to Each. Use <span class="pill">item()</span>.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Handle null with <span class="pill">coalesce()</span>. Guard empty responses with a Condition.</div></div>
+      </div>
+      <div class="takeaway"><strong>Next lesson:</strong> Compose Action — replace half your variables with one action.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ================= SLIDES =================
+const slides = document.querySelectorAll('.slide');
+const navLabel = document.getElementById('navLabel');
+const slidesContainer = document.getElementById('slidesContainer');
+const stepLabels = [
+  'Hook','Problem','Pain','Promise','What',
+  'Anatomy','Schema','Generate','Example','Nested',
+  'Array','Mixed','Weather','Designer','Patterns',
+  'UC1','UC2','UC3','UC4','UC5',
+  'Compare','GitHub 1','GitHub 2','GitHub 3','Stripe 1',
+  'Stripe 2','Stripe 3','Weather 1','Weather 2','Weather 3',
+  'Jira 1','Jira 2','Pattern 1','Pattern 2','Pattern 3',
+  'Pattern 4','Pattern 5','Compose','Err 1','Err 2',
+  'Err 3','Edge 1','Edge 2','Edge 3','Sandbox 1',
+  'Sandbox 2','Sandbox 3','Best','Quiz','Recap'
+];
+let current = 0;
+let dprScale = 1;
+const slideAnnotations = {};
+
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const pencilBtnHeader = document.getElementById('pencilBtnHeader');
+const clearBtnHeader = document.getElementById('clearBtnHeader');
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  dprScale = dpr;
+  const topbar = document.querySelector('.topbar');
+  const topbarH = topbar ? topbar.getBoundingClientRect().height : 64;
+  const availableH = window.innerHeight - topbarH;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = availableH * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = availableH + 'px';
+  canvas.style.top = topbarH + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+
+function showSlide(i) {
+  if (current >= 0 && canvas.width > 0) {
+    slideAnnotations[current] = canvas.toDataURL();
+  }
+  syncPencilState(false);
+  if (slides[current]) slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(i, slides.length - 1));
+  slides[current].classList.add('active');
+  navLabel.textContent = stepLabels[current] || 'Lesson';
+  const pct = Math.round(((current + 1) / slides.length) * 100);
+  document.getElementById('progressRing').style.setProperty('--value', pct);
+  document.getElementById('progressPercent').textContent = pct + '%';
+  slidesContainer.scrollTop = 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale);
+    };
+    img.src = slideAnnotations[current];
+  }
+}
+
+function bindNav(btn, delta) {
+  if (!btn) return;
+  let touched = false;
+  btn.addEventListener('touchstart', (e) => { touched = true; e.preventDefault(); showSlide(current + delta); }, { passive: false });
+  btn.addEventListener('click', () => { if (touched) { touched = false; return; } showSlide(current + delta); });
+}
+bindNav(document.getElementById('nextBtnHeader'), 1);
+bindNav(document.getElementById('prevBtnHeader'), -1);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showSlide(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') showSlide(current - 1);
+});
+
+let touchStartX = 0, touchStartY = 0;
+slidesContainer.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+slidesContainer.addEventListener('touchend', (e) => {
+  if (isDrawMode) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    showSlide(current + (dx < 0 ? 1 : -1));
+  }
+}, { passive: true });
+
+// ================= PENCIL =================
+canvas.addEventListener('pointerdown', e => {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  lastX = e.clientX;
+  lastY = e.clientY - canvas.getBoundingClientRect().top;
+});
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  const y = e.clientY - canvas.getBoundingClientRect().top;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(e.clientX, y); ctx.stroke();
+  lastX = e.clientX; lastY = y;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt => canvas.addEventListener(evt, () => { isDrawing = false; }));
+
+function syncPencilState(next) {
+  const enabled = Boolean(next);
+  isDrawMode = enabled;
+  canvas.classList.toggle('draw-active', enabled);
+  if (pencilBtnHeader) pencilBtnHeader.classList.toggle('active-tool', enabled);
+  if (!enabled) isDrawing = false;
+}
+function togglePencilMode(e) { if (e) { e.preventDefault(); e.stopPropagation(); } syncPencilState(!isDrawMode); }
+if (pencilBtnHeader) {
+  pencilBtnHeader.addEventListener('click', togglePencilMode);
+  pencilBtnHeader.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); togglePencilMode(); }, { passive: false });
+}
+
+function handleClear(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) delete slideAnnotations[current];
+  syncPencilState(false);
+}
+if (clearBtnHeader) {
+  clearBtnHeader.addEventListener('click', handleClear);
+  clearBtnHeader.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); handleClear(); }, { passive: false });
+}
+
+// ================= SANDBOX FUNCTIONS =================
+function sandboxJSON() {
+  const raw = document.getElementById('sandbox1-input').value;
+  const out = document.getElementById('sandbox1-output');
+  try {
+    const data = JSON.parse(raw);
+    const schema = buildSchema(data);
+    out.innerHTML = '<pre>' + syntaxHighlight(JSON.stringify(schema, null, 2)) + '</pre>';
+  } catch (e) {
+    out.innerHTML = '<span style="color:#f87171;">✕ Invalid JSON: ' + e.message + '</span>';
+  }
+}
+function buildSchema(obj) {
+  if (obj === null) return { type: 'null' };
+  if (Array.isArray(obj)) return { type: 'array', items: obj.length > 0 ? buildSchema(obj[0]) : {} };
+  if (typeof obj === 'object') {
+    const props = {};
+    Object.keys(obj).forEach(k => { props[k] = buildSchema(obj[k]); });
+    return { type: 'object', properties: props };
+  }
+  if (typeof obj === 'number') return { type: Number.isInteger(obj) ? 'integer' : 'number' };
+  if (typeof obj === 'boolean') return { type: 'boolean' };
+  return { type: 'string' };
+}
+function syntaxHighlight(json) {
+  return json
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"([^"]+)":/g, '<span style="color:#9cdcfe;">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span style="color:#ce9178;">"$1"</span>')
+    .replace(/: (true|false|null)/g, ': <span style="color:#569cd6;">$1</span>')
+    .replace(/: (\d+)/g, ': <span style="color:#b5cea8;">$1</span>');
+}
+
+function sandboxExpr() {
+  const raw = document.getElementById('sandbox2-input').value.trim();
+  const out = document.getElementById('sandbox2-output');
+  const concatMatch = raw.match(/^concat\((.*)\)$/);
+  if (concatMatch) {
+    const args = splitArgs(concatMatch[1]);
+    const result = args.map(a => { a = a.trim(); return a.startsWith("'") ? a.slice(1, -1) : a; }).join('');
+    out.innerHTML = '<span style="color:#4ade80;">✔ Result:</span><br><br><code style="color:#fcd34d; font-size:14px;">' + escapeHTML(result) + '</code>';
+    return;
+  }
+  const upperMatch = raw.match(/^toUpper\((.*)\)$/);
+  if (upperMatch) {
+    const inner = upperMatch[1].trim().replace(/^'|'$/g, '');
+    out.innerHTML = '<span style="color:#4ade80;">✔ Result:</span><br><br><code style="color:#fcd34d; font-size:14px;">' + escapeHTML(inner.toUpperCase()) + '</code>';
+    return;
+  }
+  const lengthMatch = raw.match(/^length\((.*)\)$/);
+  if (lengthMatch) {
+    const inner = lengthMatch[1].trim().replace(/^'|'$/g, '');
+    out.innerHTML = '<span style="color:#4ade80;">✔ Result:</span><br><br><code style="color:#fcd34d; font-size:14px;">' + inner.length + '</code>';
+    return;
+  }
+  out.innerHTML = 'Try: concat(\'Hello, \', \'World\') · toUpper(\'hello\') · length(\'Power Automate\')';
+}
+function splitArgs(str) {
+  const args = []; let cur = ''; let inStr = false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (c === "'") inStr = !inStr;
+    if (c === ',' && !inStr) { args.push(cur); cur = ''; } else cur += c;
+  }
+  if (cur.trim()) args.push(cur);
+  return args;
+}
+function escapeHTML(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// ================= PUZZLE =================
+const correctOrder = ['When a HTTP request is received', 'Parse JSON — PR merge', 'Condition — merged is true', 'Post Teams message'];
+let draggedEl = null;
+document.querySelectorAll('#puzzle .pa-puzzle-piece').forEach(piece => {
+  piece.addEventListener('dragstart', () => { draggedEl = piece; });
+  piece.addEventListener('dragend', () => { draggedEl = null; updateIndices(); });
+  piece.addEventListener('dragover', e => e.preventDefault());
+  piece.addEventListener('drop', e => {
+    e.preventDefault();
+    if (draggedEl && draggedEl !== piece) {
+      const parent = piece.parentNode;
+      const children = Array.from(parent.children);
+      if (children.indexOf(draggedEl) < children.indexOf(piece)) parent.insertBefore(draggedEl, piece.nextSibling);
+      else parent.insertBefore(draggedEl, piece);
+      updateIndices();
+    }
+  });
+});
+let touchDragged = null;
+document.querySelectorAll('#puzzle .pa-puzzle-piece').forEach(piece => {
+  piece.addEventListener('touchstart', () => { touchDragged = piece; }, { passive: true });
+  piece.addEventListener('touchmove', e => {
+    if (!touchDragged) return;
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && target.classList.contains('pa-puzzle-piece') && target !== touchDragged) {
+      const parent = target.parentNode;
+      const children = Array.from(parent.children);
+      if (children.indexOf(touchDragged) < children.indexOf(target)) parent.insertBefore(touchDragged, target.nextSibling);
+      else parent.insertBefore(touchDragged, target);
+      updateIndices();
+    }
+  }, { passive: true });
+  piece.addEventListener('touchend', () => { touchDragged = null; });
+});
+function updateIndices() {
+  document.querySelectorAll('#puzzle .pa-puzzle-piece').forEach((p, i) => {
+    const idx = p.querySelector('span:last-child');
+    if (idx) idx.textContent = i + 1;
+  });
+}
+function checkPuzzle() {
+  const pieces = document.querySelectorAll('#puzzle .pa-puzzle-piece');
+  const order = Array.from(pieces).map(p => p.children[1].textContent.trim());
+  const correct = order.every((name, i) => name === correctOrder[i]);
+  const out = document.getElementById('puzzle-result');
+  if (correct) out.innerHTML = '<span style="color:#4ade80;">✔ Correct! Trigger → Parse JSON → Condition → Teams message.</span>';
+  else out.innerHTML = '<span style="color:#f87171;">✕ Not quite. Hint: trigger first, then parse, then condition, then action.</span>';
+}
+
+function answer(el, correct) {
+  const parent = el.parentElement;
+  if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  parent.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+  if (!correct) {
+    parent.querySelectorAll('.quiz-option').forEach(o => {
+      if (o.getAttribute('onclick').includes('true')) o.classList.add('correct');
+    });
+  }
+}
+
+// ================= INIT =================
+resizeCanvas();
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale); };
+    img.src = slideAnnotations[current];
+  }
+});
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+showSlide(0);
+sandboxJSON();
+updateIndices();
+</script>
+</body>
+</html>

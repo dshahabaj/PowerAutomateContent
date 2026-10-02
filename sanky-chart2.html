@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Flow Diagram</title>
+
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#031728;
+    font-family:Inter,Segoe UI,sans-serif;
+    overflow:hidden;
+}
+
+#root{
+    width:100vw;
+    height:100vh;
+}
+
+.page{
+    width:100%;
+    height:100vh;
+    background:
+        radial-gradient(circle at top left,#0d3355 0%,transparent 45%),
+        linear-gradient(90deg,#041525,#062145);
+}
+
+svg{
+    width:100%;
+    height:100%;
+}
+
+.headerLabel{
+    fill:#75a9d8;
+    font-size:10px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+}
+
+.node-title{
+    fill:white;
+    font-size:15px;
+    font-weight:600;
+}
+
+.node-subtitle{
+    fill:#8ac4f2;
+    font-size:11px;
+}
+
+.node-percent{
+    fill:#86d6ff;
+    font-size:11px;
+}
+
+.node-group{
+    cursor:pointer;
+    transition:.25s;
+}
+
+.node-group:hover{
+    filter:url(#glow);
+}
+
+.flow{
+    transition:.35s;
+}
+
+.flow:hover{
+    opacity:.85;
+}
+
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const nodes = {
+
+sources:[
+{
+id:"IDE editor",
+value:"1,247",
+x:20,
+y:110
+},
+{
+id:"Terminal",
+value:"475",
+x:20,
+y:260
+},
+{
+id:"Other entry points",
+value:"1,134",
+x:20,
+y:410
+}
+],
+
+features:[
+{
+id:"Code completion",
+value:"1,243 interactions",
+pct:"43.5%",
+color:"#38E1FF",
+x:320,
+y:70
+},
+{
+id:"Chat panel",
+value:"892 interactions",
+pct:"31.2%",
+color:"#63A7FF",
+x:320,
+y:210
+},
+{
+id:"Agent mode",
+value:"721 interactions",
+pct:"25.2%",
+color:"#F0B24F",
+x:320,
+y:350
+},
+{
+id:"Copilot cloud agent",
+value:"0 interactions",
+pct:"0%",
+color:"#B8C7DA",
+x:320,
+y:490
+}
+],
+
+outcomes:[
+{
+id:"Accepted suggestion",
+value:"1,243 events",
+color:"#49E3C4",
+x:760,
+y:100
+},
+{
+id:"Generated code",
+value:"892 events",
+color:"#63A7FF",
+x:760,
+y:265
+},
+{
+id:"Returned to work",
+value:"721 events",
+color:"#F0B24F",
+x:760,
+y:430
+}
+],
+
+branches:[
+{
+id:"Accepted as-is",
+value:"746 events",
+color:"#49E3C4",
+x:1080,
+y:60
+},
+{
+id:"Accepted after edits",
+value:"497 events",
+color:"#49E3C4",
+x:1080,
+y:145
+},
+{
+id:"Pasted unchanged",
+value:"401 events",
+color:"#63A7FF",
+x:1080,
+y:230
+},
+{
+id:"Edited in workspace",
+value:"312 events",
+color:"#63A7FF",
+x:1080,
+y:315
+},
+{
+id:"Not used",
+value:"179 events",
+color:"#63A7FF",
+x:1080,
+y:400
+},
+{
+id:"Task completed",
+value:"469 events",
+color:"#F0B24F",
+x:1080,
+y:485
+},
+{
+id:"Iterated again",
+value:"252 events",
+color:"#F0B24F",
+x:1080,
+y:570
+}
+]
+
+};
+
+function link(x1,y1,x2,y2){
+
+const curve=(x2-x1)*0.45;
+
+return `
+M ${x1} ${y1}
+C ${x1+curve} ${y1},
+  ${x2-curve} ${y2},
+  ${x2} ${y2}
+`;
+}
+
+function FlowPath({
+x1,y1,x2,y2,
+width,
+color
+}){
+
+return(
+<path
+className="flow"
+d={link(x1,y1,x2,y2)}
+stroke={color}
+strokeWidth={width}
+strokeOpacity=".25"
+strokeLinecap="round"
+fill="none"
+/>
+);
+}
+
+function Node({
+x,
+y,
+title,
+subtitle,
+pct,
+color="#38E1FF",
+w=300
+}){
+
+return(
+<g className="node-group">
+
+<rect
+x={x}
+y={y}
+rx="12"
+ry="12"
+width={w}
+height="56"
+fill="#0D2840"
+stroke={color}
+strokeWidth="1.2"
+/>
+
+<circle
+cx={x+20}
+cy={y+28}
+r="5"
+fill={color}
+/>
+
+<text
+x={x+36}
+y={y+25}
+className="node-title"
+>
+{title}
+</text>
+
+{subtitle && (
+<text
+x={x+36}
+y={y+43}
+className="node-subtitle"
+>
+{subtitle}
+</text>
+)}
+
+{pct && (
+<text
+x={x+w-15}
+y={y+25}
+textAnchor="end"
+className="node-percent"
+>
+{pct}
+</text>
+)}
+
+</g>
+);
+}
+
+function App(){
+
+return(
+<div className="page">
+
+<svg viewBox="0 0 1350 700">
+
+<defs>
+
+<filter id="glow">
+<feGaussianBlur stdDeviation="3" result="blur"/>
+<feMerge>
+<feMergeNode in="blur"/>
+<feMergeNode in="SourceGraphic"/>
+</feMerge>
+</filter>
+
+</defs>
+
+<text x="20" y="25" className="headerLabel">
+ENTRY POINT
+</text>
+
+<text x="335" y="25" className="headerLabel">
+FEATURE INTERACTION
+</text>
+
+<text x="760" y="25" className="headerLabel">
+OBSERVED OUTCOME
+</text>
+
+<text x="1085" y="25" className="headerLabel">
+OUTCOME BRANCHES
+</text>
+
+{/* SOURCE -> FEATURE */}
+
+<FlowPath x1={180} y1={135} x2={320} y2={98} width={38} color="#38E1FF"/>
+<FlowPath x1={180} y1={135} x2={320} y2={238} width={20} color="#63A7FF"/>
+<FlowPath x1={180} y1={135} x2={320} y2={378} width={10} color="#F0B24F"/>
+
+<FlowPath x1={180} y1={285} x2={320} y2={238} width={25} color="#63A7FF"/>
+<FlowPath x1={180} y1={285} x2={320} y2={378} width={12} color="#F0B24F"/>
+
+<FlowPath x1={180} y1={435} x2={320} y2={98} width={18} color="#38E1FF"/>
+<FlowPath x1={180} y1={435} x2={320} y2={378} width={20} color="#F0B24F"/>
+
+{/* FEATURE -> OUTCOME */}
+
+<FlowPath x1={625} y1={98} x2={760} y2={128} width={52} color="#38E1FF"/>
+
+<FlowPath x1={625} y1={238} x2={760} y2={295} width={45} color="#63A7FF"/>
+
+<FlowPath x1={625} y1={378} x2={760} y2={458} width={38} color="#F0B24F"/>
+
+{/* OUTCOME -> BRANCH */}
+
+<FlowPath x1={1070} y1={128} x2={1080} y2={88} width={26} color="#49E3C4"/>
+<FlowPath x1={1070} y1={128} x2={1080} y2={173} width={18} color="#49E3C4"/>
+
+<FlowPath x1={1070} y1={295} x2={1080} y2={258} width={16} color="#63A7FF"/>
+<FlowPath x1={1070} y1={295} x2={1080} y2={343} width={14} color="#63A7FF"/>
+<FlowPath x1={1070} y1={295} x2={1080} y2={428} width={10} color="#63A7FF"/>
+
+<FlowPath x1={1070} y1={458} x2={1080} y2={513} width={15} color="#F0B24F"/>
+<FlowPath x1={1070} y1={458} x2={1080} y2={598} width={12} color="#F0B24F"/>
+
+{/* SOURCES */}
+
+<Node
+x={20}
+y={110}
+title="IDE editor"
+subtitle="1,247"
+/>
+
+<Node
+x={20}
+y={260}
+title="Terminal"
+subtitle="475"
+/>
+
+<Node
+x={20}
+y={410}
+title="Other entry points"
+subtitle="1,134"
+/>
+
+{/* FEATURES */}
+
+<Node
+x={320}
+y={70}
+title="Code completion"
+subtitle="1,243 interactions"
+pct="43.5%"
+color="#38E1FF"
+/>
+
+<Node
+x={320}
+y={210}
+title="Chat panel"
+subtitle="892 interactions"
+pct="31.2%"
+color="#63A7FF"
+/>
+
+<Node
+x={320}
+y={350}
+title="Agent mode"
+subtitle="721 interactions"
+pct="25.2%"
+color="#F0B24F"
+/>
+
+<Node
+x={320}
+y={490}
+title="Copilot cloud agent"
+subtitle="0 interactions"
+pct="0%"
+color="#A6B6C8"
+/>
+
+{/* OUTCOMES */}
+
+<Node
+x={760}
+y={100}
+title="Accepted suggestion"
+subtitle="1,243 events"
+color="#49E3C4"
+/>
+
+<Node
+x={760}
+y={265}
+title="Generated code"
+subtitle="892 events"
+color="#63A7FF"
+/>
+
+<Node
+x={760}
+y={430}
+title="Returned to work"
+subtitle="721 events"
+color="#F0B24F"
+/>
+
+{/* BRANCHES */}
+
+<Node x={1080} y={60} title="Accepted as-is" subtitle="746 events" color="#49E3C4"/>
+<Node x={1080} y={145} title="Accepted after edits" subtitle="497 events" color="#49E3C4"/>
+<Node x={1080} y={230} title="Pasted unchanged" subtitle="401 events" color="#63A7FF"/>
+<Node x={1080} y={315} title="Edited in workspace" subtitle="312 events" color="#63A7FF"/>
+<Node x={1080} y={400} title="Not used" subtitle="179 events" color="#63A7FF"/>
+<Node x={1080} y={485} title="Task completed" subtitle="469 events" color="#F0B24F"/>
+<Node x={1080} y={570} title="Iterated again" subtitle="252 events" color="#F0B24F"/>
+
+</svg>
+
+</div>
+);
+}
+
+ReactDOM.createRoot(
+document.getElementById("root")
+).render(<App/>);
+
+</script>
+
+</body>
+</html>

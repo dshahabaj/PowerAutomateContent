@@ -1,0 +1,1781 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Parse JSON — Recording Version</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+
+:root {
+  --bg: #0a0612;
+  --card: #16101f;
+  --card-2: #1e1629;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+  --accent: #a78bfa;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --cue: #22d3ee;
+  --note: #fbbf24;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ================= TOPBAR ================= */
+.topbar {
+  position: relative;
+  z-index: 200;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(10,6,18,0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.topbar .icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(167,139,250,.95), rgba(34,211,238,.9));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.topbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+  text-align: center;
+}
+.topbar-center .center-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.topbar-center .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.topbar-center .center-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
+}
+.header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.mini-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all .18s ease;
+  flex-shrink: 0;
+}
+.mini-btn:hover {
+  background: rgba(255,255,255,.06);
+}
+.mini-btn.primary {
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  border-color: rgba(167,139,250,.8);
+  color: #130b1e;
+  font-weight: 700;
+}
+.mini-btn.active-tool {
+  background: rgba(251,191,36,.28);
+  border-color: rgba(251,191,36,.85);
+  color: #fbbf24;
+  filter: brightness(1.4) saturate(1.5);
+  position: relative;
+}
+.mini-btn.active-tool::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #fbbf24;
+  border-radius: 50%;
+  top: 4px;
+  right: 4px;
+  box-shadow: 0 0 8px #fbbf24;
+}
+.mini-btn.prompter {
+  background: rgba(167,139,250,.15);
+  border-color: rgba(167,139,250,.5);
+  color: #c4b5fd;
+}
+.mini-btn.prompter.active {
+  background: rgba(167,139,250,.35);
+  color: #e9d5ff;
+}
+
+.progress-ring {
+  --value: 4;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--value) * 1%), rgba(255,255,255,.09) 0);
+  position: relative;
+}
+.progress-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: rgba(10,6,18,0.96);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 50%;
+}
+.progress-ring span {
+  position: relative;
+  z-index: 1;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+/* ================= RECORDING TIMER ================= */
+.record-timer {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(239,68,68,.15);
+  border: 1px solid rgba(239,68,68,.4);
+  color: #fca5a5;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ================= SCREEN CUE ================= */
+.screen-cue {
+  background: rgba(34,211,238,.08);
+  border-left: 4px solid var(--cue);
+  border-top: 1px solid rgba(34,211,238,.2);
+  border-right: 1px solid rgba(34,211,238,.2);
+  border-bottom: 1px solid rgba(34,211,238,.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #a5f3fc;
+}
+.screen-cue strong {
+  color: var(--cue);
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* ================= SPEAKER NOTES ================= */
+.speaker-notes {
+  background: rgba(250,204,21,.08);
+  border-left: 4px solid var(--note);
+  border-top: 1px solid rgba(250,204,21,.2);
+  border-right: 1px solid rgba(250,204,21,.2);
+  border-bottom: 1px solid rgba(250,204,21,.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #fde68a;
+}
+.speaker-notes summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #fbbf24;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.speaker-notes summary::-webkit-details-marker { display: none; }
+.speaker-notes summary::before {
+  content: '▶';
+  font-size: 10px;
+  transition: transform .2s;
+}
+.speaker-notes[open] summary::before {
+  transform: rotate(90deg);
+}
+.speaker-notes p {
+  color: #fef3c7;
+  margin-top: 12px;
+  line-height: 1.85;
+  font-size: 14px;
+}
+.speaker-notes p + p { margin-top: 10px; }
+
+/* ================= TRANSITION CUE ================= */
+.transition-cue {
+  display: inline-block;
+  background: rgba(167,139,250,.12);
+  border: 1px dashed rgba(167,139,250,.5);
+  color: #c4b5fd;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 14px;
+}
+
+/* ================= CANVAS ================= */
+#annotationLayer {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+  touch-action: none;
+  display: block;
+}
+#annotationLayer.draw-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+/* ================= SLIDES ================= */
+.slides {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: manipulation;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-top: 40px;
+  padding-bottom: 200px;
+  padding-left: clamp(40px, 8vw, 140px);
+  padding-right: clamp(40px, 8vw, 140px);
+}
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #4a3a55; border-radius: 6px; }
+
+.slide {
+  display: none;
+  animation: fadeUp .4s ease;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  padding: 40px;
+  border-radius: 30px;
+  background: rgba(22,16,31,.95);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+.slide.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+h2 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; margin-top: 24px; color: var(--text); }
+h4 { font-size: 17px; margin-bottom: 10px; }
+p { color: var(--text-dim); font-size: 15px; line-height: 1.65; margin-bottom: 14px; }
+
+/* ================= CARDS ================= */
+.card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.card.tint { background: var(--card-2); }
+.card.purple { border-color: #a78bfa; box-shadow: 0 0 24px rgba(167,139,250,.15); }
+.card.cyan { border-color: #22d3ee; box-shadow: 0 0 24px rgba(34,211,238,.15); }
+.card.green { border-color: #4ade80; box-shadow: 0 0 24px rgba(74,222,128,.15); }
+.card.yellow { border-color: #facc15; box-shadow: 0 0 24px rgba(250,204,21,.15); }
+.card.pink { border-color: #f472b6; box-shadow: 0 0 24px rgba(244,114,182,.15); }
+.card.orange { border-color: #fb923c; box-shadow: 0 0 24px rgba(251,146,60,.15); }
+.card.red { border-color: #f87171; box-shadow: 0 0 24px rgba(248,113,113,.15); }
+
+.card-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.card-label.cyan { color: var(--accent-2); }
+.card-label.green { color: var(--green); }
+.card-label.yellow { color: var(--yellow); }
+.card-label.pink { color: var(--pink); }
+.card-label.orange { color: var(--orange); }
+.card-label.red { color: var(--red); }
+
+.pill {
+  display: inline-block;
+  background: rgba(255,255,255,.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--accent-2);
+  margin: 0 2px;
+}
+
+.code-block {
+  background: #0a0612;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #e2e8f0;
+  overflow-x: auto;
+  margin: 14px 0;
+  white-space: pre;
+}
+.code-block .key { color: #7dd3fc; }
+.code-block .str { color: #fcd34d; }
+.code-block .num { color: #f472b6; }
+.code-block .bool { color: #c4b5fd; }
+.code-block .brace { color: #a78bfa; }
+.code-block .com { color: #64748b; font-style: italic; }
+
+/* ================= PROMPTER MODE ================= */
+body.prompter-mode .card,
+body.prompter-mode .code-block,
+body.prompter-mode .flow-mock,
+body.prompter-mode .anatomy-row,
+body.prompter-mode .anatomy-detail,
+body.prompter-mode .quiz-q,
+body.prompter-mode .compare-grid,
+body.prompter-mode .takeaway,
+body.prompter-mode .warning,
+body.prompter-mode .tryit,
+body.prompter-mode .screen-cue,
+body.prompter-mode .record-timer,
+body.prompter-mode .transition-cue,
+body.prompter-mode .step-label,
+body.prompter-mode h2,
+body.prompter-mode > .slides > .slide > p:not(.speaker-notes p),
+body.prompter-mode .challenge-panel,
+body.prompter-mode .sandbox-panel {
+  display: none !important;
+}
+
+body.prompter-mode .speaker-notes {
+  display: block !important;
+  background: #0a0612;
+  border: 2px solid var(--note);
+  border-radius: 20px;
+  padding: 60px;
+  margin: 0;
+}
+body.prompter-mode .speaker-notes summary {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: var(--note);
+}
+body.prompter-mode .speaker-notes p {
+  font-size: 32px;
+  line-height: 2;
+  color: #fef9c3;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .slide { padding: 24px; }
+  .speaker-notes p { font-size: 13px; }
+  body.prompter-mode .speaker-notes p { font-size: 22px; line-height: 1.8; }
+  body.prompter-mode .speaker-notes { padding: 30px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="mini-btn" id="prevBtnHeader">←</button>
+      <button class="mini-btn" id="pencilBtnHeader" title="Pencil">✏️</button>
+      <button class="mini-btn" id="clearBtnHeader" title="Clear">🧹</button>
+      <button class="mini-btn prompter" id="prompterBtn" title="Teleprompter mode">📺</button>
+    </div>
+
+    <div class="topbar-center">
+      <div class="icon">{ }</div>
+      <div class="center-label">
+        <div class="eyebrow">Recording</div>
+        <div class="center-title" id="navLabel">Checklist</div>
+      </div>
+    </div>
+
+    <div class="header-nav">
+      <div class="progress-ring" id="progressRing">
+        <span id="progressPercent">3%</span>
+      </div>
+      <button class="mini-btn primary" id="nextBtnHeader">→</button>
+    </div>
+  </div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- SLIDE 0: RECORDING CHECKLIST -->
+    <div class="slide active">
+      <div class="record-timer">⏱ ~30s</div>
+      <div class="step-label">Before you record</div>
+      <h2>🎬 Recording Checklist</h2>
+      <p>Run through this once before you hit record. Takes 60 seconds and saves you 10 retakes.</p>
+
+      <div class="card cyan">
+        <div class="card-label cyan">Environment</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+          <li>Power Automate portal open in one tab (make.powerautomate.com)</li>
+          <li>A sample HTTP action ready with real JSON output</li>
+          <li>This lesson open in a second window or on a tablet</li>
+          <li>Quiet room, door closed, phone on silent</li>
+          <li>Water nearby</li>
+        </ul>
+      </div>
+
+      <div class="card green">
+        <div class="card-label green">Tools ready</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+          <li>Screen recording software running (OBS, Loom, or iPad recorder)</li>
+          <li>Microphone tested with a 10-second sample</li>
+          <li>Notification popups disabled (Focus mode)</li>
+        </ul>
+      </div>
+
+      <div class="card purple">
+        <div class="card-label">How to use this lesson</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+          <li>Click <strong>📺 Teleprompter</strong> to switch to script-only mode</li>
+          <li>Read the speaker notes aloud — they're word-for-word</li>
+          <li>Show what the 🎬 screen cue describes</li>
+          <li>Watch the ⏱ timer to pace yourself</li>
+          <li>Advance with → or swipe left</li>
+        </ul>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Your Power Automate portal, ready with a sample flow. This slide is just for you — don't record it.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p><strong>Do not record this slide.</strong> Use it as a pre-flight checklist.</p>
+        <p>Once everything is ready, click 📺 to enter teleprompter mode, then advance to Slide 01.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 01 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">01 — What you'll learn</div>
+      <h2>Parse JSON in Power Automate</h2>
+      <p>Parse JSON turns a raw JSON string into typed dynamic content you can actually use. Without it, working with APIs is nearly impossible.</p>
+
+      <div class="card purple">
+        <div class="card-label">By the end of this lesson</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px; margin-top:8px;">
+          <li>Know what Parse JSON does and why it exists</li>
+          <li>Understand Content vs Schema</li>
+          <li>Generate a schema from a real sample</li>
+          <li>Access nested fields correctly</li>
+          <li>Handle arrays in JSON</li>
+          <li>Avoid the 6 most common mistakes</li>
+        </ul>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show this intro slide with the lesson title. If you have a Power Automate flow open, keep it minimized for now.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>In the next 15 minutes, I'm going to show you how Parse JSON works in Power Automate.</p>
+        <p>This is the action that turns a raw API response into usable, typed fields. Without it, working with APIs is basically impossible.</p>
+        <p>By the end, you'll know what it does, how to generate the schema, how to access nested fields, and the six mistakes that most beginners make. Let's get into it.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 02 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~75s</div>
+      <div class="step-label">02 — The problem</div>
+      <h2>Why raw JSON is useless in Power Automate</h2>
+      <p>When an HTTP call returns data, it looks like one giant string. You can't reference any part of it.</p>
+
+      <div class="card red">
+        <div class="card-label red">What the HTTP action gives you</div>
+        <div class="code-block">{"id":1,"name":"Alice","email":"alice@example.com"}</div>
+        <p style="margin-bottom:0; font-size:13px;">Power Automate sees this as <em>one string</em>. No fields. No structure. Nothing to click.</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show the HTTP action in Power Automate. Highlight the response body — the whole thing is one long string. Show that when you try to use dynamic content, no individual fields appear.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Okay, let's look at the actual problem.</p>
+        <p>When an HTTP action returns data, Power Automate treats the entire response as one giant string. You can't reference any individual field. You can't loop through it. You can't even see what's inside.</p>
+        <p>Look at this example. This is what a simple JSON response looks like — id, name, email. All on one line. Power Automate sees this as text — not as data.</p>
+        <p>So you can't drag the email field into another action. You can't check if the name matches something. You can't do anything useful.</p>
+        <p>That's exactly what Parse JSON solves.</p>
+      </details>
+
+      <div class="transition-cue">➡️ Next: how Parse JSON fixes this</div>
+    </div>
+
+    <!-- SLIDE 03 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">03 — What Parse JSON does</div>
+      <h2>A translator between raw text and typed fields</h2>
+      <p>Parse JSON reads the raw JSON string, matches it against a schema, and exposes every field as dynamic content.</p>
+
+      <div class="card cyan">
+        <div class="card-label cyan">Before Parse JSON</div>
+        <p style="margin-bottom:0; font-family:monospace; font-size:13px;">{ "id": 1, "name": "Alice" }</p>
+      </div>
+
+      <div class="card green">
+        <div class="card-label green">After Parse JSON</div>
+        <p style="margin-bottom:8px;">Every field becomes a chip you can drag into any action:</p>
+        <p style="margin-bottom:0;"><span class="pill">id</span> <span class="pill">name</span> <span class="pill">email</span></p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show the Parse JSON action in the designer. Highlight where the "Content" comes from (the HTTP body). Show that after parsing, dynamic content chips appear below the action.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Parse JSON is basically a translator.</p>
+        <p>It takes the raw string from your HTTP action and reads it against a schema — a definition of what the JSON should look like. Once it understands the shape, it exposes every field as a dynamic content chip.</p>
+        <p>So this — a blob of text — becomes this. A set of usable fields: id, name, email.</p>
+        <p>Important thing: Parse JSON doesn't change the data. The data is still the same. It just tells Power Automate the shape so it can use it.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 04 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~70s</div>
+      <div class="step-label">04 — Simple example</div>
+      <h2>From blob to fields — step by step</h2>
+      <div class="code-block">// Raw response from an API
+{
+  "id": 101,
+  "name": "Shahabaj",
+  "email": "shahabaj@example.com",
+  "role": "Developer"
+}</div>
+
+      <div class="card green">
+        <div class="card-label green">After Parse JSON — 4 usable fields</div>
+        <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px; margin-top:8px;">
+          <li><span class="pill">id</span> → 101</li>
+          <li><span class="pill">name</span> → Shahabaj</li>
+          <li><span class="pill">email</span> → shahabaj@example.com</li>
+          <li><span class="pill">role</span> → Developer</li>
+        </ul>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a real Parse JSON action that returns these four fields. In the run history, show the OUTPUT section where each field is listed. Then show the flow using "email" in a Send email action.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Here's a real example. Look at this JSON response — id, name, email, role. That's what comes back from the API.</p>
+        <p>Once it goes through Parse JSON, you get four usable fields. And here's the key part — now you can use any of these in downstream actions.</p>
+        <p>You can send the email field to Outlook. You can log the name to SharePoint. You can check if the role equals "Developer". All because Parse JSON exposed these as proper fields.</p>
+        <p>One action. Four fields. Reusable everywhere below.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 05 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~45s</div>
+      <div class="step-label">05 — Why it matters</div>
+      <h2>Without Parse JSON, your flow can't grow</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+        <li>You can't reference individual fields</li>
+        <li>You can't filter, loop, or transform the data</li>
+        <li>You can't send it to Excel, SharePoint, or Teams</li>
+        <li>You can't debug what's actually inside</li>
+        <li>You can't validate the response structure</li>
+      </ul>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a flow that would be broken without Parse JSON — attempted uses of dynamic content that don't exist because the HTTP output wasn't parsed.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Here's why this matters in practice.</p>
+        <p>Without Parse JSON, your flow can only do so much. You can't reference individual fields. You can't filter, loop, or transform the data. You can't send it to Excel, SharePoint, or Teams. You can't debug what's actually inside.</p>
+        <p>Basically, without Parse JSON, anything that requires knowing what's inside your API response is off the table.</p>
+        <p>Parse JSON is the bridge between raw data and everything else you want to do with it.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 06 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~80s</div>
+      <div class="step-label">06 — Anatomy</div>
+      <h2>The anatomy of Parse JSON</h2>
+      <p>Four parts you need to know:</p>
+
+      <div class="card cyan">
+        <div class="card-label cyan">📥 Content</div>
+        <p style="margin-bottom:0;">The raw JSON string — usually from the previous action's body.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">🧬 Schema</div>
+        <p style="margin-bottom:0;">The shape definition. Power Automate generates it from a sample.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">📤 Outputs</div>
+        <p style="margin-bottom:0;">Typed dynamic content chips — one per field in the schema.</p>
+      </div>
+      <div class="card yellow">
+        <div class="card-label yellow">🔗 Downstream</div>
+        <p style="margin-bottom:0;">Use the fields in any action below via <span class="pill">body('Parse_JSON')?['key']</span>.</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show the Parse JSON action in the designer. Point to the "Content" field. Point to the "Schema" field. Then show the OUTPUT section in run history where fields appear. Then show a downstream action using one of these fields.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let's break down Parse JSON into four parts.</p>
+        <p>First — Content. This is the raw JSON string. Usually it's the body of the previous HTTP action.</p>
+        <p>Second — Schema. This is the shape definition. It tells Power Automate what fields to expect and their types. You almost never write this by hand — Power Automate generates it from a sample.</p>
+        <p>Third — Outputs. Once parsed, every field becomes a typed dynamic content chip. One per field. These are what you drag into downstream actions.</p>
+        <p>Fourth — Downstream. You access the fields anywhere below using the expression body, followed by the action name, followed by the field key.</p>
+        <p>Content is what you parse. Schema is how. Outputs are what you get. Downstream is where you use it.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 07 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~75s</div>
+      <div class="step-label">07 — Schema basics</div>
+      <h2>What is a JSON schema?</h2>
+      <p>A schema describes the structure: which fields exist, their types, and which are required.</p>
+
+      <div class="code-block">{
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "string" },
+    "active": { "type": "boolean" }
+  }
+}</div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show what happens when you click "Generate from sample" inside Parse JSON. Show the dialog box appearing. Paste a JSON sample and show the schema being generated.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Before we go further, you need to understand the schema.</p>
+        <p>A schema is a description of your JSON. It says which fields exist, what type each field is — string, integer, boolean, whatever — and which are required.</p>
+        <p>Here's what one looks like. You can see "id" is an integer, "name" is a string, "active" is a boolean.</p>
+        <p>Now — the good news. You almost never write this by hand. Power Automate has a button called "Generate from sample". You paste a sample JSON response, click Done, and it writes the schema for you.</p>
+        <p>That's what we're going to look at next.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 08 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~90s</div>
+      <div class="step-label">08 — Generate from sample</div>
+      <h2>The magic button that saves you hours</h2>
+      <p>Four steps — and you're done.</p>
+
+      <div class="card purple">
+        <div class="card-label">Step 1</div>
+        <p style="margin-bottom:0;">Add the Parse JSON action below your HTTP call</p>
+      </div>
+      <div class="card cyan">
+        <div class="card-label cyan">Step 2</div>
+        <p style="margin-bottom:0;">Click "Use sample payload to generate schema"</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">Step 3</div>
+        <p style="margin-bottom:0;">Paste a real, complete JSON response and click Done</p>
+      </div>
+      <div class="card yellow">
+        <div class="card-label yellow">Step 4</div>
+        <p style="margin-bottom:0;">Set Content to <span class="pill">body('HTTP')</span> from the previous action</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Live demo. Open Power Automate. Add a Parse JSON action. Click "Generate from sample". Paste a real JSON sample. Click Done. Show the schema appearing. Then set the Content field to the HTTP body.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Here's the workflow for using Parse JSON.</p>
+        <p>Step one — add the Parse JSON action right below your HTTP call.</p>
+        <p>Step two — inside the action, click "Use sample payload to generate schema". This opens a dialog box.</p>
+        <p>Step three — paste a real, complete JSON response from your API. Not something made up. A real one. Then click Done.</p>
+        <p>Power Automate will build the schema automatically.</p>
+        <p>Step four — set the Content field of the action to body of your HTTP action. That tells Parse JSON which string to parse.</p>
+        <p>That's it. Four steps and you're done. Let me show you this live.</p>
+      </details>
+
+      <div class="transition-cue">➡️ Switch to Power Automate portal for the live demo</div>
+    </div>
+
+    <!-- SLIDE 09 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~70s</div>
+      <div class="step-label">09 — Example 1</div>
+      <h2>Simple object → 4 fields</h2>
+      <div class="code-block">{
+  "id": 101,
+  "name": "Shahabaj",
+  "email": "s@example.com",
+  "active": true
+}</div>
+
+      <p>Access any field like this:</p>
+      <div class="code-block">body('Parse_JSON')?['email']</div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show the parsed output of this simple object. Then show a Compose action or Send email action that uses the email field via the expression above.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let's walk through a real example.</p>
+        <p>Here's the JSON. id, name, email, active. Simple, flat object.</p>
+        <p>After parsing, you access any of these fields using this expression — body of Parse JSON, followed by the field key in brackets.</p>
+        <p>So for email, it's body('Parse_JSON')?['email']. Notice the question mark before the bracket — that's called a null-safe accessor. If the field doesn't exist, Power Automate returns null instead of crashing.</p>
+        <p>This is the pattern you'll use 90% of the time.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 10 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~80s</div>
+      <div class="step-label">10 — Example 2</div>
+      <h2>Nested object — objects inside objects</h2>
+      <div class="code-block">{
+  "id": 101,
+  "user": {
+    "name": "Shahabaj",
+    "email": "s@example.com"
+  },
+  "address": {
+    "city": "Mumbai",
+    "country": "India"
+  }
+}</div>
+
+      <p>Access nested fields by chaining:</p>
+      <div class="code-block">body('Parse_JSON')?['user']?['name']
+body('Parse_JSON')?['address']?['city']</div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a nested JSON parsed in Power Automate. Expand the run history output. Show how nested fields appear with their own sub-levels. Then show a Compose action accessing the city field.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Now let's look at nested objects.</p>
+        <p>Real APIs often nest data. Look at this — the user object is inside the main response. And address is also inside.</p>
+        <p>After parsing, you access these by chaining the pattern. So to get the user's name, it's body of Parse JSON, then user, then name. Same pattern for city — body, then address, then city.</p>
+        <p>Each nested level uses that question mark and bracket. It's like walking down a folder structure. You just add one step for each level of nesting.</p>
+        <p>One important tip — if you're not sure whether a field exists, the question mark saves you. It returns null instead of throwing an error.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 11 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~70s</div>
+      <div class="step-label">11 — Example 3</div>
+      <h2>Array of objects — when JSON returns a list</h2>
+      <div class="code-block">[
+  { "id": 1, "name": "Alice" },
+  { "id": 2, "name": "Bob" },
+  { "id": 3, "name": "Cara" }
+]</div>
+
+      <p>Schema type is <span class="pill">array</span>. Loop through with Apply to Each and access <span class="pill">item()?['name']</span>.</p>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show an array-parsed output. Show the Apply to Each loop. Inside the loop, show the expression item()?['name'] in a Compose action. Run the flow and show each item being processed.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Now let's talk about arrays.</p>
+        <p>Sometimes the API returns a list of items instead of a single object. Look at this — three users, each with an id and name.</p>
+        <p>When the top-level type is an array, Power Automate knows it's a list. You handle this with an Apply to Each loop.</p>
+        <p>Inside the loop, you access the current item using item()?['name']. Not body. Not triggerBody. item.</p>
+        <p>That's the pattern for arrays. body for parsed objects at the top level. item inside a loop.</p>
+        <p>If you mix those up, you get null values or errors. So remember: top-level uses body, loop uses item.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 12 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~80s</div>
+      <div class="step-label">12 — Example 4</div>
+      <h2>Mixed types — including null</h2>
+      <div class="code-block">{
+  "name": "Order #101",
+  "amount": 249.99,
+  "paid": true,
+  "discount": null,
+  "tags": ["urgent", "vip"]
+}</div>
+
+      <div class="card yellow">
+        <div class="card-label yellow">Watch out for null</div>
+        <p style="margin-bottom:0;">Use <span class="pill">coalesce(body('Parse_JSON')?['discount'], 0)</span> to provide a fallback.</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a parsed JSON with mixed types in the run history. Highlight how the null field appears. Then show a Compose action using coalesce to provide a default value.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Real APIs mix types. Here's what that looks like.</p>
+        <p>You have name — a string. amount — a number with decimals. paid — a boolean. discount — null. tags — an array of strings.</p>
+        <p>Parse JSON handles all of these. No problem.</p>
+        <p>But here's the trap — null fields. If your API sometimes returns null for a field, and you use that field downstream, your flow might fail. Because null doesn't behave like a real value.</p>
+        <p>Fix that with coalesce. Coalesce takes two values and returns the first one that isn't null. So coalesce of discount and 0 returns either the discount, or 0 if discount is null.</p>
+        <p>Always handle null explicitly. It's the difference between a flow that works and one that breaks at 2 AM.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 13 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~75s</div>
+      <div class="step-label">13 — Example 5</div>
+      <h2>Real weather API response</h2>
+      <div class="code-block">{
+  "location": "Mumbai",
+  "temperature": 32,
+  "humidity": 78,
+  "condition": "Sunny",
+  "forecast": [
+    { "day": "Mon", "high": 34 },
+    { "day": "Tue", "high": 33 }
+  ]
+}</div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a real HTTP call to a weather API. Show the raw response. Then show Parse JSON exposing all fields including the forecast array. Show a Teams message using temperature and condition.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let's put this all together with a real weather API response.</p>
+        <p>You call the API. You get back location, temperature, humidity, condition, and a forecast array with two days.</p>
+        <p>After Parse JSON — all of these become usable. Location, temperature, humidity, condition — all at the top level.</p>
+        <p>And forecast — that's an array. You'd loop through it with Apply to Each if you wanted to process each day.</p>
+        <p>Now you can send a Teams message with the temperature and condition. You can log the humidity to SharePoint. You can do anything you want with this data.</p>
+        <p>That's the whole point. Raw JSON in. Useful data out.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 14 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~80s</div>
+      <div class="step-label">14 — In the designer</div>
+      <h2>Real flow, real steps</h2>
+
+      <div class="card cyan">
+        <div class="card-label cyan">🌐 HTTP — GET weather API</div>
+        <p style="margin-bottom:0;">Returns raw JSON</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">🧬 Parse JSON — Weather</div>
+        <p style="margin-bottom:0;">Schema generated from sample</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">📊 Create item — SharePoint</div>
+        <p style="margin-bottom:0;">Uses parsed fields</p>
+      </div>
+      <div class="card pink">
+        <div class="card-label pink">💬 Post Teams message</div>
+        <p style="margin-bottom:0;">Temperature + condition</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Live demo — open Power Automate designer. Show the entire flow: HTTP trigger at top, Parse JSON below, then SharePoint create item, then Teams message. Click through each action so the viewer sees the field mapping.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Here's what a real flow looks like.</p>
+        <p>Top — HTTP action that calls the weather API. This returns raw JSON.</p>
+        <p>Next — Parse JSON with a schema generated from a sample response. This is where the magic happens.</p>
+        <p>Then — Create SharePoint item. Notice that we can now use temperature, humidity, condition — all of them are dynamic content from the Parse JSON action above.</p>
+        <p>Finally — Post Teams message. We send temperature and condition to a Teams channel. Both fields come straight from Parse JSON.</p>
+        <p>Four actions. Complete automation. From API to SharePoint to Teams in one flow.</p>
+        <p>Parse JSON always sits between a raw response and its consumer.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 15 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~70s</div>
+      <div class="step-label">15 — Access patterns</div>
+      <h2>Every way to reference parsed fields</h2>
+      <div class="code-block">// Top-level field
+body('Parse_JSON')?['name']
+
+// Nested field
+body('Parse_JSON')?['user']?['email']
+
+// Array element (inside Apply to Each)
+item()?['amount']
+
+// Array index (when you know the position)
+body('Parse_JSON')?['tags']?[0]
+
+// With fallback for null
+coalesce(body('Parse_JSON')?['discount'], 0)</div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show these five patterns on screen in a Compose action or the expression editor. Type each one so the viewer sees the exact syntax.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let me leave you with the five patterns you'll use again and again.</p>
+        <p>One — top-level field. body of Parse JSON, then the field name.</p>
+        <p>Two — nested field. Chain the pattern. body, then user, then email.</p>
+        <p>Three — array element inside a loop. item, then the field name.</p>
+        <p>Four — array index when you know the position. body, then tags, then index zero. That gets you the first item.</p>
+        <p>Five — with a fallback for null. Coalesce wraps the whole thing and provides a default.</p>
+        <p>Memorize these five. They cover 95% of real-world cases.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 16 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~55s</div>
+      <div class="step-label">16 — Use case 1</div>
+      <h2>Parse JSON after HTTP</h2>
+      <p>The #1 use case. Every HTTP GET or POST that returns JSON should have Parse JSON right after it.</p>
+
+      <div class="card cyan">
+        <div class="card-label cyan">Pattern</div>
+        <p style="margin-bottom:0;">HTTP → Parse JSON → use fields anywhere below</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a real HTTP action followed immediately by Parse JSON. Highlight the workflow order.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Use case number one — and honestly the most common one — Parse JSON right after HTTP.</p>
+        <p>Every HTTP GET or POST that returns JSON should have Parse JSON right below it. No exceptions.</p>
+        <p>The pattern is simple. HTTP, then Parse JSON, then use the fields anywhere below. That's it.</p>
+        <p>If you're building a flow with an HTTP action and skipping Parse JSON, you're making a mistake.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 17 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~45s</div>
+      <div class="step-label">17 — Use case 2</div>
+      <h2>Parse custom connector output</h2>
+      <p>Custom connectors often return raw JSON you need to parse before use.</p>
+
+      <div class="card purple">
+        <div class="card-label">Pattern</div>
+        <p style="margin-bottom:0;">Custom connector → Parse JSON → downstream actions</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a custom connector action in the flow. Show its raw output. Then show Parse JSON following it.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Use case two — Parse custom connector output.</p>
+        <p>Custom connectors are great because they wrap APIs in a reusable format. But they often return raw JSON you still need to parse.</p>
+        <p>Even premium connectors sometimes need this. So if you're using a custom connector, always check — does the output look like a blob? If yes, add Parse JSON right after.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 18 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~45s</div>
+      <div class="step-label">18 — Use case 3</div>
+      <h2>Parse webhook payloads</h2>
+      <p>Webhooks send JSON. Parse it before triggering downstream logic.</p>
+
+      <div class="card green">
+        <div class="card-label green">Pattern</div>
+        <p style="margin-bottom:0;">Webhook trigger → Parse JSON → Condition or loop</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a webhook trigger in Power Automate. Show the raw JSON it received. Then show Parse JSON following it.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Use case three — webhook payloads.</p>
+        <p>When an external system sends a webhook, it sends JSON. GitHub, Stripe, Slack, Teams — they all do this.</p>
+        <p>Before you can do anything useful with that webhook, you have to parse it. Otherwise you're stuck with a raw string.</p>
+        <p>Webhooks are the second-biggest source of JSON in Power Automate after HTTP calls.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 19 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~45s</div>
+      <div class="step-label">19 — Use case 4</div>
+      <h2>Parse Dataverse responses</h2>
+      <p>Custom Dataverse calls return JSON. Parse before you loop or filter.</p>
+
+      <div class="card orange">
+        <div class="card-label orange">Pattern</div>
+        <p style="margin-bottom:0;">Dataverse HTTP → Parse JSON → Filter Array → Apply to Each</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a Dataverse HTTP call returning JSON. Then show Parse JSON filtering the response before looping.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Use case four — Dataverse responses.</p>
+        <p>When you work with Dataverse through HTTP or custom connectors, you often get back JSON instead of a nice table.</p>
+        <p>Parse it first, then filter, then loop. That's the clean order.</p>
+        <p>Remember the rule — if it looks like curly braces on screen, parse it.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 20 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~50s</div>
+      <div class="step-label">20 — Use case 5</div>
+      <h2>Parse JSON for Excel or CSV export</h2>
+      <p>Once parsed, use Select to shape the fields and Create CSV table to export.</p>
+
+      <div class="card pink">
+        <div class="card-label pink">Pattern</div>
+        <p style="margin-bottom:0;">Parse JSON → Select → Create CSV table → send to SharePoint</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show Parse JSON followed by Select and Create CSV table. Show the resulting CSV file opened in Excel.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Use case five — Excel and CSV export.</p>
+        <p>Once you parse JSON, you can reshape it with the Select action and then use Create CSV table to export it.</p>
+        <p>That CSV can go to SharePoint, OneDrive, or anywhere else. You can open it in Excel. You can send it to a customer.</p>
+        <p>Clean data in, clean data out. Parse JSON is what makes that possible.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 21 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">21 — Compare</div>
+      <h2>Parse JSON vs Compose</h2>
+
+      <div class="card cyan">
+        <div class="card-label cyan">Parse JSON</div>
+        <p style="margin-bottom:0;">Reads the shape. Interprets JSON structure. Needs a schema. Great for API responses.</p>
+      </div>
+      <div class="card pink">
+        <div class="card-label pink">Compose</div>
+        <p style="margin-bottom:0;">Holds a value. Static. Doesn't interpret structure. Perfect for building JSON.</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show both actions side by side in the designer. Show a Compose action that builds JSON. Show Parse JSON that reads JSON.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>One quick comparison before we move on — Parse JSON vs Compose.</p>
+        <p>Parse JSON reads the shape. It interprets JSON structure. It needs a schema. And it's perfect for API responses.</p>
+        <p>Compose holds a value. It's static. It doesn't interpret anything. And it's perfect for building JSON or holding computed values.</p>
+        <p>Think of it this way — Compose writes JSON. Parse JSON reads it. Different tools for different jobs.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 22 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">22 — Interactive 1</div>
+      <h2>Try it — simple object</h2>
+      <p>Watch how raw JSON becomes typed fields.</p>
+
+      <div class="card">
+        <div class="card-label">Input JSON</div>
+        <div class="code-block">{
+  "id": 101,
+  "name": "Shahabaj",
+  "email": "shahabaj@example.com",
+  "role": "Developer"
+}</div>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show this slide, then switch to Power Automate. Paste this exact JSON into a Parse JSON action's schema generator. Show the output.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let me show you this in the live designer.</p>
+        <p>I'm going to take this exact JSON — id, name, email, role — and paste it into a Parse JSON action.</p>
+        <p>Watch what happens when I click "Generate from sample."</p>
+        <p>The schema is built automatically. And now downstream, all four fields are available as dynamic content.</p>
+        <p>That's the whole workflow.</p>
+      </details>
+
+      <div class="transition-cue">➡️ Switch to Power Automate portal for demo</div>
+    </div>
+
+    <!-- SLIDE 23 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~65s</div>
+      <div class="step-label">23 — Interactive 2</div>
+      <h2>Try it — nested object</h2>
+      <p>Watch nested objects become accessible fields.</p>
+
+      <div class="card">
+        <div class="card-label">Input JSON</div>
+        <div class="code-block">{
+  "id": 101,
+  "user": {
+    "name": "Shahabaj",
+    "email": "s@example.com"
+  },
+  "address": {
+    "city": "Mumbai"
+  }
+}</div>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Switch to Power Automate. Paste this JSON into Parse JSON. Show nested schema structure. Then use the city field in a Compose action.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Now let's try a nested object.</p>
+        <p>I'll paste this JSON into Parse JSON. Watch how the schema breaks out user and address as their own sub-levels.</p>
+        <p>Now in a Compose action, I can write body of Parse JSON, user, name. And it returns Shahabaj.</p>
+        <p>This is how you handle any level of nesting. Just chain the pattern.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 24 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">24 — Interactive 3</div>
+      <h2>Try it — array of objects</h2>
+      <p>See how arrays work with Apply to Each.</p>
+
+      <div class="card">
+        <div class="card-label">Input JSON</div>
+        <div class="code-block">[
+  { "id": 1, "name": "Alice" },
+  { "id": 2, "name": "Bob" },
+  { "id": 3, "name": "Cara" }
+]</div>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Switch to Power Automate. Parse this array. Add Apply to Each loop. Inside the loop, use item()?['name']. Run the flow and show each item.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Now — arrays.</p>
+        <p>I'll paste this array into Parse JSON. The schema type is array. That means it's a list.</p>
+        <p>To process it, I add an Apply to Each loop. And inside, I use item()?['name']. Item is the current element.</p>
+        <p>Watch the output. Each of the three names gets processed one by one.</p>
+        <p>That's the pattern. Top-level uses body. Loop uses item.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 25 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~65s</div>
+      <div class="step-label">25 — Interactive 4</div>
+      <h2>Try it — mixed types and null</h2>
+      <p>See how Power Automate handles different types.</p>
+
+      <div class="card">
+        <div class="card-label">Input JSON</div>
+        <div class="code-block">{
+  "name": "Order #101",
+  "amount": 249.99,
+  "paid": true,
+  "discount": null,
+  "tags": ["urgent", "vip"]
+}</div>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Switch to Power Automate. Parse this. In run history, show that discount is null. Then use coalesce on discount in a Compose action.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Last demo — mixed types.</p>
+        <p>I'll paste this. Notice discount is null. That's going to matter.</p>
+        <p>If I try to use discount downstream without handling null, the flow might fail. So I wrap it in coalesce.</p>
+        <p>Coalesce of discount and 0. If discount exists, use it. If it's null, use 0 instead.</p>
+        <p>Always handle nulls. That's one of the biggest differences between a beginner's flow and a production flow.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 26 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">26 — Practice</div>
+      <h2>Write the expression — 3 exercises</h2>
+
+      <div class="card cyan">
+        <div class="card-label cyan">Exercise 1</div>
+        <p style="margin-bottom:8px;">How do you access the <span class="pill">email</span> field from a simple object?</p>
+        <p style="margin-bottom:0; font-family:monospace; color:var(--green);">body('Parse_JSON')?['email']</p>
+      </div>
+
+      <div class="card purple">
+        <div class="card-label">Exercise 2</div>
+        <p style="margin-bottom:8px;">How do you access <span class="pill">city</span> inside <span class="pill">address</span>?</p>
+        <p style="margin-bottom:0; font-family:monospace; color:var(--green);">body('Parse_JSON')?['address']?['city']</p>
+      </div>
+
+      <div class="card green">
+        <div class="card-label green">Exercise 3</div>
+        <p style="margin-bottom:8px;">Inside Apply to Each, how do you access <span class="pill">name</span>?</p>
+        <p style="margin-bottom:0; font-family:monospace; color:var(--green);">item()?['name']</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show each of these three exercises in the expression editor of Power Automate. Type the correct answer after each one.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Before we move on, here are three quick exercises for you.</p>
+        <p>Exercise one — you have a simple object. How do you access the email field? Answer: body of Parse JSON, question mark, email in brackets.</p>
+        <p>Exercise two — the city field is inside address. How do you access it? Answer: body, address, city. Chain the pattern.</p>
+        <p>Exercise three — you're inside an Apply to Each loop. How do you access name? Answer: item, then name.</p>
+        <p>Remember — top-level uses body. Inside a loop uses item. If you get those two right, you're solid.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 27 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~90s</div>
+      <div class="step-label">27 — Pitfalls</div>
+      <h2>Six common mistakes</h2>
+
+      <div class="card red">
+        <div class="card-label red">1. Dynamic content as the sample</div>
+        <p style="margin-bottom:0;">Paste a static JSON sample, not dynamic content. Otherwise the schema generation fails.</p>
+      </div>
+
+      <div class="card yellow">
+        <div class="card-label yellow">2. Incomplete sample</div>
+        <p style="margin-bottom:0;">If your sample has 2 fields but the real response has 5, only 2 will be available downstream.</p>
+      </div>
+
+      <div class="card orange">
+        <div class="card-label orange">3. Wrong schema type</div>
+        <p style="margin-bottom:0;">Object vs Array matters. <span class="pill">{ }</span> is object. <span class="pill">[ ]</span> is array.</p>
+      </div>
+
+      <div class="card purple">
+        <div class="card-label">4. Empty responses</div>
+        <p style="margin-bottom:0;">Guard with <span class="pill">empty()</span> before parsing. Otherwise Parse JSON fails.</p>
+      </div>
+
+      <div class="card cyan">
+        <div class="card-label cyan">5. outputs() instead of body()</div>
+        <p style="margin-bottom:0;">Parse JSON outputs live in <span class="pill">body('Parse_JSON')</span>, not <span class="pill">outputs()</span>.</p>
+      </div>
+
+      <div class="card green">
+        <div class="card-label green">6. Not handling null</div>
+        <p style="margin-bottom:0;">Wrap with <span class="pill">coalesce()</span> for a fallback value.</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> For each mistake, show what it looks like in the designer when the mistake is made. Show the correct fix.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let's talk about the six most common mistakes.</p>
+        <p>One — using dynamic content as the sample. When you click Generate from sample, paste static JSON. If you paste dynamic content, it won't work.</p>
+        <p>Two — using an incomplete sample. If your sample only has 2 fields but the real response has 5, only 2 will be available downstream. Always use a real, complete response.</p>
+        <p>Three — wrong schema type. Object versus array. If the response is curly braces it's an object. If it's square brackets it's an array. Getting this wrong breaks everything downstream.</p>
+        <p>Four — not handling empty responses. If the API returns nothing, Parse JSON fails. Guard with a Condition first.</p>
+        <p>Five — using outputs instead of body. Parse JSON outputs live in body of Parse JSON. Not outputs.</p>
+        <p>Six — not handling null. Wrap null-sensitive fields with coalesce.</p>
+        <p>Avoid these six and your flows will be rock solid.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 28 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">28 — Best practices</div>
+      <h2>Write clean Parse JSON actions</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+        <li>Rename every action — <span class="pill">Parse_Weather</span>, not <span class="pill">Parse_JSON</span></li>
+        <li>Generate the schema from a real, complete response</li>
+        <li>Store the sample in a comment or documentation</li>
+        <li>Test with empty or malformed responses</li>
+        <li>Use <span class="pill">?['key']</span> for optional fields</li>
+        <li>Validate the response before parsing</li>
+      </ul>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show a well-named Parse JSON action. Show the flow structure. Show where the sample is documented.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Here are the best practices I follow.</p>
+        <p>Rename every action. Not "Parse_JSON" — instead "Parse_Weather" or "Parse_User_Response". Your future self will thank you.</p>
+        <p>Generate the schema from a real, complete response — not a mockup, not a guess.</p>
+        <p>Store the sample somewhere. A comment, a doc, a wiki. Because when the API changes, you'll need it.</p>
+        <p>Test with empty or malformed responses. It's not if the API fails — it's when.</p>
+        <p>Use question mark brackets for optional fields. And validate the response before parsing when you can.</p>
+        <p>Six practices. Follow them and your flows will hold up in production.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 29 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~70s</div>
+      <div class="step-label">29 — Real scenario</div>
+      <h2>API → Teams notification, step by step</h2>
+
+      <div class="card cyan">
+        <div class="card-label cyan">🌐 HTTP — GET ticket API</div>
+        <p style="margin-bottom:0;">Returns ticket JSON</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">🧬 Parse JSON — Ticket</div>
+        <p style="margin-bottom:0;">Schema from ticket sample</p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">🔀 Condition — priority is High</div>
+        <p style="margin-bottom:0;">Uses parsed priority field</p>
+      </div>
+      <div class="card pink">
+        <div class="card-label pink">💬 Post Teams message</div>
+        <p style="margin-bottom:0;">Ticket ID, title, priority, owner</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Live demo — build or show this flow end-to-end. Run it once. Show the Teams message arriving with parsed ticket details.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let's put everything together with a real business scenario.</p>
+        <p>You call a ticket API with HTTP. It returns ticket JSON.</p>
+        <p>You parse it — now you have ticket ID, title, priority, owner.</p>
+        <p>You add a Condition — is the priority High? If yes, we want the team to know.</p>
+        <p>Then you post to Teams with all the parsed fields. Ticket ID, title, priority, owner.</p>
+        <p>Four actions. From API to Teams in one flow. This is what Parse JSON unlocks.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 30 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~90s</div>
+      <div class="step-label">30 — Quiz</div>
+      <h2>Does it stick?</h2>
+      <p>Six quick questions. Pause the video and pick your answer.</p>
+
+      <div class="card cyan">
+        <div class="card-label cyan">Q1. What does Parse JSON do?</div>
+        <p style="margin-bottom:0;">Answer: Turns raw JSON into typed dynamic content.</p>
+      </div>
+      <div class="card purple">
+        <div class="card-label">Q2. How do you reference a top-level field?</div>
+        <p style="margin-bottom:0;">Answer: <span class="pill">body('Parse_JSON')?['name']</span></p>
+      </div>
+      <div class="card green">
+        <div class="card-label green">Q3. How do you access a nested field?</div>
+        <p style="margin-bottom:0;">Answer: Chain the pattern — <span class="pill">body('Parse_JSON')?['user']?['name']</span></p>
+      </div>
+      <div class="card yellow">
+        <div class="card-label yellow">Q4. What sample should you use?</div>
+        <p style="margin-bottom:0;">Answer: A real, complete API response — not something made up.</p>
+      </div>
+      <div class="card pink">
+        <div class="card-label pink">Q5. Inside Apply to Each, how do you access a field?</div>
+        <p style="margin-bottom:0;">Answer: <span class="pill">item()?['name']</span></p>
+      </div>
+      <div class="card orange">
+        <div class="card-label orange">Q6. How do you guard against null?</div>
+        <p style="margin-bottom:0;">Answer: Wrap with <span class="pill">coalesce()</span>.</p>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Show each question and answer. Pause briefly between questions to let the viewer think.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Six quick questions. Pause the video if you want to think first.</p>
+        <p>One — what does Parse JSON do? Turns raw JSON into typed dynamic content.</p>
+        <p>Two — how do you reference a top-level field? Body of Parse JSON, question mark, field name in brackets.</p>
+        <p>Three — nested field? Chain the pattern. Body, user, name.</p>
+        <p>Four — what sample should you use? A real, complete API response. Not something made up.</p>
+        <p>Five — inside Apply to Each? Item, question mark, field name.</p>
+        <p>Six — how do you guard against null? Wrap with coalesce.</p>
+        <p>If you got all six, you've got this.</p>
+      </details>
+    </div>
+
+    <!-- SLIDE 31 -->
+    <div class="slide">
+      <div class="record-timer">⏱ ~60s</div>
+      <div class="step-label">Recap</div>
+      <h2>What you now know</h2>
+      <div class="card tint">
+        <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;">
+          <div style="color:var(--green); font-size:20px;">✔</div>
+          <div><strong>Parse JSON</strong> turns raw JSON strings into typed dynamic content.</div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;">
+          <div style="color:var(--green); font-size:20px;">✔</div>
+          <div>It needs <strong>Content</strong> (raw JSON) and a <strong>Schema</strong> (shape definition).</div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;">
+          <div style="color:var(--green); font-size:20px;">✔</div>
+          <div>Use <strong>Generate from sample</strong> with a real, complete response.</div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;">
+          <div style="color:var(--green); font-size:20px;">✔</div>
+          <div>Top-level: <span class="pill">body('Parse_JSON')?['key']</span>. Nested: chain <span class="pill">?['key']</span>.</div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:16px;">
+          <div style="color:var(--green); font-size:20px;">✔</div>
+          <div>Arrays go through Apply to Each. Use <span class="pill">item()</span> for each element.</div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:flex-start;">
+          <div style="color:var(--green); font-size:20px;">✔</div>
+          <div>Handle null with <span class="pill">coalesce()</span>. Guard empty responses with a Condition.</div>
+        </div>
+      </div>
+
+      <div class="screen-cue">
+        <strong>🎬 On screen:</strong> Final slide. Return to the slide itself for the closing. Show the summary as-is.
+      </div>
+
+      <details class="speaker-notes" open>
+        <summary>🎙️ Narration script</summary>
+        <p>Let's recap.</p>
+        <p>Parse JSON turns raw JSON strings into typed dynamic content.</p>
+        <p>It needs Content — the raw JSON — and a Schema — the shape definition.</p>
+        <p>Use Generate from sample with a real, complete response from your API.</p>
+        <p>Access top-level fields with body of Parse JSON. Chain the pattern for nested fields.</p>
+        <p>Arrays go through Apply to Each. Use item for each element.</p>
+        <p>And handle null with coalesce. Guard empty responses with a Condition.</p>
+        <p>That's everything you need to know about Parse JSON in Power Automate.</p>
+        <p>If this video helped you, hit subscribe. I post daily Power Automate content. Next lesson is on Child Flows — how to break a giant flow into modular pieces. Link is in the description.</p>
+        <p>Thanks for watching. See you in the next one.</p>
+      </details>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ================= SLIDES =================
+const slides = document.querySelectorAll('.slide');
+const navLabel = document.getElementById('navLabel');
+const slidesContainer = document.getElementById('slidesContainer');
+const stepLabels = [
+  'Checklist','Intro','Problem','What','Example','Why',
+  'Anatomy','Schema','Generate','Ex1','Ex2',
+  'Ex3','Ex4','Ex5','Designer','Access',
+  'UC1','UC2','UC3','UC4','UC5',
+  'Compare','Demo 1','Demo 2','Demo 3','Demo 4',
+  'Practice','Pitfalls','Best','Scenario','Quiz','Recap'
+];
+let current = 0;
+let dprScale = 1;
+const slideAnnotations = {};
+
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const pencilBtnHeader = document.getElementById('pencilBtnHeader');
+const clearBtnHeader = document.getElementById('clearBtnHeader');
+const prompterBtn = document.getElementById('prompterBtn');
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  dprScale = dpr;
+  const topbar = document.querySelector('.topbar');
+  const topbarH = topbar ? topbar.getBoundingClientRect().height : 64;
+  const availableH = window.innerHeight - topbarH;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = availableH * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = availableH + 'px';
+  canvas.style.top = topbarH + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+
+function showSlide(i) {
+  if (current >= 0 && canvas.width > 0) {
+    slideAnnotations[current] = canvas.toDataURL();
+  }
+  syncPencilState(false);
+  if (slides[current]) slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(i, slides.length - 1));
+  slides[current].classList.add('active');
+  const titleText = stepLabels[current] || 'Problem';
+  navLabel.textContent = titleText;
+  const percentValue = Math.round(((current + 1) / slides.length) * 100);
+  const progressRing = document.getElementById('progressRing');
+  const progressPercent = document.getElementById('progressPercent');
+  if (progressRing) progressRing.style.setProperty('--value', percentValue);
+  if (progressPercent) progressPercent.textContent = `${percentValue}%`;
+  slidesContainer.scrollTop = 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale);
+    };
+    img.src = slideAnnotations[current];
+  }
+}
+
+function bindNav(btn, delta) {
+  if (!btn) return;
+  let touched = false;
+  btn.addEventListener('touchstart', (e) => {
+    touched = true;
+    e.preventDefault();
+    showSlide(current + delta);
+  }, { passive: false });
+  btn.addEventListener('click', () => {
+    if (touched) { touched = false; return; }
+    showSlide(current + delta);
+  });
+}
+bindNav(document.getElementById('nextBtnHeader'), 1);
+bindNav(document.getElementById('prevBtnHeader'), -1);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showSlide(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') showSlide(current - 1);
+  if (e.key === 'p' || e.key === 'P') togglePrompter();
+});
+
+let touchStartX = 0, touchStartY = 0;
+slidesContainer.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+slidesContainer.addEventListener('touchend', (e) => {
+  if (isDrawMode) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (dx < 0) showSlide(current + 1);
+    else showSlide(current - 1);
+  }
+}, { passive: true });
+
+// ================= PENCIL =================
+canvas.addEventListener('pointerdown', e => {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  lastX = e.clientX;
+  lastY = e.clientY - canvas.getBoundingClientRect().top;
+});
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  const y = e.clientY - canvas.getBoundingClientRect().top;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(e.clientX, y);
+  ctx.stroke();
+  lastX = e.clientX;
+  lastY = y;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt =>
+  canvas.addEventListener(evt, () => { isDrawing = false; })
+);
+
+function syncPencilState(nextState) {
+  const enabled = Boolean(nextState);
+  isDrawMode = enabled;
+  canvas.classList.toggle('draw-active', enabled);
+  if (pencilBtnHeader) {
+    pencilBtnHeader.classList.toggle('active-tool', enabled);
+  }
+  if (!enabled) isDrawing = false;
+}
+
+function togglePencilMode(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  syncPencilState(!isDrawMode);
+}
+
+if (pencilBtnHeader) {
+  pencilBtnHeader.addEventListener('click', togglePencilMode);
+  pencilBtnHeader.addEventListener('touchend', (e) => {
+    e.preventDefault(); e.stopPropagation(); togglePencilMode();
+  }, { passive: false });
+}
+
+function handleClear(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) delete slideAnnotations[current];
+  syncPencilState(false);
+}
+if (clearBtnHeader) {
+  clearBtnHeader.addEventListener('click', handleClear);
+  clearBtnHeader.addEventListener('touchend', (e) => {
+    e.preventDefault(); e.stopPropagation(); handleClear();
+  }, { passive: false });
+}
+
+// ================= PROMPTER MODE =================
+function togglePrompter(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  document.body.classList.toggle('prompter-mode');
+  prompterBtn.classList.toggle('active', document.body.classList.contains('prompter-mode'));
+  // Auto-open speaker notes when entering prompter mode
+  if (document.body.classList.contains('prompter-mode')) {
+    document.querySelectorAll('.slide.active .speaker-notes').forEach(el => el.open = true);
+  }
+}
+if (prompterBtn) {
+  prompterBtn.addEventListener('click', togglePrompter);
+  prompterBtn.addEventListener('touchend', (e) => {
+    e.preventDefault(); e.stopPropagation(); togglePrompter();
+  }, { passive: false });
+}
+
+// ================= INIT =================
+resizeCanvas();
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale);
+    };
+    img.src = slideAnnotations[current];
+  }
+});
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+showSlide(0);
+</script>
+</body>
+</html>

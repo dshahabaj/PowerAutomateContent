@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parse JSON — Power Automate, from zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg:#08050f;
+  --bg-2:#0d0818;
+  --card:rgba(24,17,36,.72);
+  --card-2:rgba(30,22,44,.9);
+  --stroke:rgba(255,255,255,.08);
+  --stroke-2:rgba(255,255,255,.14);
+  --text:#f4f1fa;
+  --dim:#a89bb5;
+  --dim-2:#7c6f8a;
+  --violet:#a78bfa;
+  --violet-2:#7c3aed;
+  --cyan:#22d3ee;
+  --green:#4ade80;
+  --yellow:#fbbf24;
+  --red:#f87171;
+  --pink:#f472b6;
+}
+
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ===== Ambient background ===== */
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.bg-wrap::before{
+  content:'';position:absolute;inset:-20%;
+  background:
+    radial-gradient(800px 500px at 15% 10%, rgba(167,139,250,.22), transparent 60%),
+    radial-gradient(700px 500px at 85% 20%, rgba(34,211,238,.15), transparent 60%),
+    radial-gradient(700px 500px at 50% 100%, rgba(244,114,182,.12), transparent 60%);
+  animation:aurora 22s ease-in-out infinite alternate;
+}
+.bg-wrap::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse at center, #000 30%, transparent 80%);
+}
+@keyframes aurora{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(-3%,2%) scale(1.06)}
+  100%{transform:translate(2%,-2%) scale(1.02)}
+}
+
+/* ===== App shell ===== */
+.app{
+  position:relative;z-index:1;
+  height:100vh;
+  display:flex;flex-direction:column;
+}
+
+/* ===== Slim header ===== */
+header{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px clamp(20px,4vw,44px);
+  background:linear-gradient(180deg, rgba(13,8,24,.85), rgba(13,8,24,.4));
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--stroke);
+  gap:16px;
+}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand-mark{
+  width:40px;height:40px;flex-shrink:0;
+  border-radius:12px;
+  background:linear-gradient(135deg,#a78bfa,#22d3ee);
+  display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;font-size:15px;color:#0a0612;
+  box-shadow:0 0 24px rgba(167,139,250,.5), inset 0 1px 0 rgba(255,255,255,.4);
+}
+.brand-text{min-width:0}
+.brand-eyebrow{
+  font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--dim-2);font-weight:700;
+}
+.brand-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;font-weight:700;letter-spacing:-.2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.header-right{display:flex;align-items:center;gap:14px}
+.chapter-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 14px;border-radius:999px;
+  background:rgba(34,211,238,.1);
+  border:1px solid rgba(34,211,238,.3);
+  font-size:12px;font-weight:600;color:#67e8f9;
+  white-space:nowrap;
+}
+.chapter-pill .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#22d3ee;
+  box-shadow:0 0 10px #22d3ee;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{50%{opacity:.4}}
+.ring{
+  position:relative;width:38px;height:38px;flex-shrink:0;
+}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:3}
+.ring .track{stroke:rgba(255,255,255,.08)}
+.ring .fill{
+  stroke:url(#rg);
+  stroke-linecap:round;
+  transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1);
+}
+.ring span{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-size:10px;font-weight:700;color:var(--text);
+}
+
+/* ===== Slides ===== */
+.slides{
+  flex:1;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  scroll-behavior:smooth;
+  padding:clamp(28px,4vw,56px) clamp(20px,6vw,90px) 190px;
+  -webkit-overflow-scrolling:touch;
+}
+.slides::-webkit-scrollbar{width:8px}
+.slides::-webkit-scrollbar-track{background:transparent}
+.slides::-webkit-scrollbar-thumb{background:rgba(167,139,250,.25);border-radius:8px}
+.slides::-webkit-scrollbar-thumb:hover{background:rgba(167,139,250,.45)}
+
+.slide{display:none;max-width:1080px;margin:0 auto}
+.slide.active{display:block;animation:enter .55s cubic-bezier(.16,1,.3,1)}
+@keyframes enter{
+  from{opacity:0;transform:translateY(24px) scale(.985)}
+  to{opacity:1;transform:none}
+}
+
+.chip{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 12px;border-radius:999px;
+  background:rgba(167,139,250,.1);
+  border:1px solid rgba(167,139,250,.28);
+  font-size:11.5px;font-weight:700;letter-spacing:.5px;
+  color:#c4b5fd;text-transform:uppercase;
+  margin-bottom:16px;
+}
+.chip.cyan{background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.3);color:#67e8f9}
+.chip.green{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.3);color:#86efac}
+.chip.pink{background:rgba(244,114,182,.1);border-color:rgba(244,114,182,.3);color:#f9a8d4}
+.chip.yellow{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);color:#fcd34d}
+
+h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(26px,3.4vw,38px);
+  font-weight:700;letter-spacing:-.8px;line-height:1.15;
+  margin-bottom:14px;
+  background:linear-gradient(135deg,#fff 30%,#c4b5fd 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.lede{
+  font-size:clamp(15px,1.4vw,17px);
+  line-height:1.65;color:var(--dim);
+  margin-bottom:28px;max-width:70ch;
+}
+h3{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:19px;font-weight:600;letter-spacing:-.3px;
+  margin:28px 0 12px;
+}
+p{font-size:15.5px;line-height:1.7;color:var(--dim);margin-bottom:14px}
+p strong{color:var(--text);font-weight:600}
+ul.clean{list-style:none;padding:0;display:flex;flex-direction:column;gap:12px;margin:16px 0}
+ul.clean li{
+  position:relative;padding-left:30px;
+  font-size:15px;line-height:1.65;color:var(--dim);
+}
+ul.clean li::before{
+  content:'';position:absolute;left:0;top:9px;
+  width:16px;height:16px;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  border-radius:5px;
+  box-shadow:0 0 12px rgba(167,139,250,.4);
+}
+ul.clean li strong{color:var(--text)}
+
+/* ===== Cards ===== */
+.card{
+  background:var(--card);
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  padding:22px 24px;
+  margin-bottom:14px;
+  backdrop-filter:blur(14px);
+  transition:transform .25s,border-color .25s,box-shadow .25s;
+}
+.card:hover{
+  transform:translateY(-2px);
+  border-color:var(--stroke-2);
+  box-shadow:0 20px 44px rgba(0,0,0,.35);
+}
+.card .lbl{
+  font-size:11px;font-weight:700;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--violet);
+  margin-bottom:10px;
+}
+.card .lbl.cyan{color:var(--cyan)}
+.card .lbl.green{color:var(--green)}
+.card .lbl.yellow{color:var(--yellow)}
+.card .lbl.pink{color:var(--pink)}
+.card .lbl.red{color:var(--red)}
+
+.grid-2{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px;
+  margin:20px 0;
+}
+
+/* Callouts */
+.callout{
+  display:flex;gap:14px;
+  padding:18px 22px;
+  border-radius:16px;
+  margin:18px 0;
+  font-size:14.5px;line-height:1.65;
+  border:1px solid;
+}
+.callout .ico{font-size:20px;line-height:1;flex-shrink:0}
+.callout .body{flex:1;color:var(--text)}
+.callout .body strong{display:block;margin-bottom:4px;font-weight:700}
+.callout.insight{
+  background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(34,211,238,.06));
+  border-color:rgba(167,139,250,.3);
+}
+.callout.warn{
+  background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(248,113,113,.06));
+  border-color:rgba(251,191,36,.3);
+}
+.callout.pro{
+  background:linear-gradient(135deg,rgba(74,222,128,.1),rgba(34,211,238,.06));
+  border-color:rgba(74,222,128,.3);
+}
+.callout.mind{
+  background:linear-gradient(135deg,rgba(244,114,182,.1),rgba(167,139,250,.06));
+  border-color:rgba(244,114,182,.3);
+}
+.callout p{margin:0;color:inherit;font-size:14.5px}
+
+/* Inline pill / code */
+.pill{
+  display:inline-block;
+  background:rgba(34,211,238,.1);
+  border:1px solid rgba(34,211,238,.2);
+  padding:2px 8px;border-radius:6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;color:#67e8f9;
+  margin:0 2px;
+}
+.pill.v{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.25);color:#c4b5fd}
+.pill.g{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.25);color:#86efac}
+
+/* Code blocks */
+.code{
+  background:#07040d;
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  padding:16px 18px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;line-height:1.75;
+  color:#e2e8f0;
+  overflow-x:auto;
+  margin:14px 0;
+  position:relative;
+}
+.code::before{
+  content:attr(data-lang);
+  position:absolute;top:10px;right:14px;
+  font-size:10px;letter-spacing:1px;
+  color:var(--dim-2);text-transform:uppercase;
+  font-weight:700;
+}
+.code .k{color:#7dd3fc}
+.code .s{color:#fcd34d}
+.code .n{color:#f472b6}
+.code .b{color:#a78bfa}
+.code .c{color:#5d5372;font-style:italic}
+
+/* Before / After */
+.ba{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;gap:14px;
+  margin:24px 0;
+}
+.ba .side{
+  padding:18px;
+  border-radius:14px;
+  background:var(--card-2);
+  border:1px solid var(--stroke);
+  font-size:13.5px;
+  line-height:1.6;
+}
+.ba .side .tag{
+  font-size:10.5px;font-weight:700;letter-spacing:1.2px;
+  text-transform:uppercase;margin-bottom:8px;
+  display:inline-block;
+  padding:3px 8px;border-radius:6px;
+}
+.ba .side.bad .tag{background:rgba(248,113,113,.15);color:#fca5a5}
+.ba .side.good .tag{background:rgba(74,222,128,.15);color:#86efac}
+.ba .arrow{
+  font-size:22px;color:var(--violet);
+  animation:slide 1.6s ease-in-out infinite;
+}
+@keyframes slide{
+  0%,100%{transform:translateX(0)}
+  50%{transform:translateX(6px)}
+}
+@media (max-width:640px){
+  .ba{grid-template-columns:1fr;text-align:center}
+  .ba .arrow{transform:rotate(90deg)}
+}
+
+/* Flow mock */
+.flow{
+  background:var(--card-2);
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  padding:18px;margin:20px 0;
+  display:flex;flex-direction:column;gap:10px;
+}
+.flow-item{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;
+  background:rgba(15,10,22,.85);
+  border-radius:12px;
+  border-left:3px solid var(--violet);
+  transition:transform .2s;
+}
+.flow-item:hover{transform:translateX(4px)}
+.flow-item.cy{border-left-color:var(--cyan)}
+.flow-item.gr{border-left-color:var(--green)}
+.flow-item.pk{border-left-color:var(--pink)}
+.flow-item .ic{
+  width:34px;height:34px;flex-shrink:0;
+  border-radius:9px;
+  display:grid;place-items:center;font-size:16px;
+  background:rgba(255,255,255,.05);
+}
+.flow-item .nm{font-size:14px;font-weight:600}
+.flow-item .mt{font-size:11.5px;color:var(--dim-2);margin-top:3px}
+
+/* Accordion */
+.acc{
+  background:var(--card);
+  border:1px solid var(--stroke);
+  border-radius:14px;
+  margin-bottom:10px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.acc:hover{background:var(--card-2);border-color:var(--stroke-2)}
+.acc-head{
+  padding:16px 20px;
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:14.5px;font-weight:600;
+}
+.acc-head .ar{color:var(--dim-2);transition:transform .3s;font-size:12px}
+.acc.open .acc-head .ar{transform:rotate(180deg);color:var(--violet)}
+.acc-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .35s ease,padding .35s;
+  padding:0 20px;font-size:14px;line-height:1.7;color:var(--dim);
+}
+.acc.open .acc-body{max-height:500px;padding:0 20px 20px}
+
+/* Try it */
+.try{
+  background:var(--card);
+  border:1px solid var(--stroke);
+  border-radius:20px;
+  padding:24px;
+}
+.try textarea{
+  width:100%;
+  background:#07040d;
+  border:1px solid var(--stroke);
+  border-radius:12px;
+  padding:14px 16px;
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;line-height:1.7;
+  min-height:130px;resize:vertical;
+  margin-bottom:14px;
+  outline:none;
+  transition:border-color .2s;
+}
+.try textarea:focus{border-color:var(--violet)}
+.btn{
+  width:100%;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  color:#0a0612;border:none;
+  padding:14px 20px;border-radius:12px;
+  font-family:inherit;font-weight:700;font-size:14.5px;
+  cursor:pointer;
+  transition:transform .15s,box-shadow .2s;
+  box-shadow:0 8px 24px rgba(167,139,250,.35);
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(167,139,250,.5)}
+.btn:active{transform:translateY(0)}
+.res{margin-top:16px}
+.res .row{
+  display:flex;justify-content:space-between;
+  padding:10px 14px;
+  border-radius:10px;
+  background:rgba(74,222,128,.06);
+  border:1px solid rgba(74,222,128,.2);
+  margin-bottom:8px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;
+  animation:enter .3s backwards;
+}
+.res .row:nth-child(2){animation-delay:.05s}
+.res .row:nth-child(3){animation-delay:.1s}
+.res .row:nth-child(4){animation-delay:.15s}
+.res .row .k{color:#86efac}
+.res .row .v{color:var(--text)}
+.res .err{
+  padding:14px;border-radius:10px;
+  background:rgba(248,113,113,.1);
+  border:1px solid rgba(248,113,113,.3);
+  color:#fca5a5;font-size:13px;
+}
+
+/* Quiz */
+.quiz{
+  background:var(--card);
+  border:1px solid var(--stroke);
+  border-radius:18px;
+  padding:22px;margin-bottom:14px;
+}
+.quiz .q{font-size:15px;font-weight:600;margin-bottom:14px}
+.opt{
+  background:var(--card-2);
+  padding:14px 18px;border-radius:12px;
+  margin-bottom:8px;cursor:pointer;
+  font-size:14px;border:1px solid transparent;
+  transition:all .2s;
+  display:flex;align-items:center;gap:12px;
+}
+.opt::before{
+  content:'';width:18px;height:18px;flex-shrink:0;
+  border-radius:50%;border:2px solid rgba(255,255,255,.2);
+  transition:all .2s;
+}
+.opt:hover{border-color:rgba(255,255,255,.2);background:rgba(30,22,44,1)}
+.opt.correct{background:rgba(74,222,128,.12);border-color:var(--green);color:#86efac}
+.opt.correct::before{background:var(--green);border-color:var(--green);box-shadow:0 0 12px rgba(74,222,128,.6)}
+.opt.wrong{background:rgba(248,113,113,.12);border-color:var(--red);color:#fca5a5}
+.opt.wrong::before{background:var(--red);border-color:var(--red)}
+.opt.dis{pointer-events:none;opacity:.6}
+.why{
+  margin-top:10px;padding:12px 16px;
+  border-radius:10px;
+  background:rgba(167,139,250,.08);
+  border-left:3px solid var(--violet);
+  font-size:13px;color:var(--dim);line-height:1.6;
+}
+
+/* Recap */
+.recap-item{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:14px 0;
+  border-bottom:1px solid var(--stroke);
+}
+.recap-item:last-child{border-bottom:none}
+.recap-item .chk{
+  width:24px;height:24px;flex-shrink:0;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--green),var(--cyan));
+  display:grid;place-items:center;
+  font-size:12px;font-weight:700;color:#0a0612;
+  box-shadow:0 0 16px rgba(74,222,128,.4);
+}
+.recap-item .tx{font-size:14.5px;line-height:1.65;color:var(--dim)}
+.recap-item .tx strong{color:var(--text)}
+
+/* Final CTA */
+.final{
+  text-align:center;
+  padding:40px 30px;
+  border-radius:24px;
+  background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(34,211,238,.08));
+  border:1px solid rgba(167,139,250,.25);
+  margin-top:24px;
+}
+.final .big{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:26px;font-weight:700;letter-spacing:-.5px;
+  margin-bottom:10px;
+  background:linear-gradient(135deg,#fff,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.final p{color:var(--dim);margin:0;font-size:14.5px}
+
+/* ===== Bottom nav ===== */
+.nav{
+  position:fixed;bottom:18px;left:50%;
+  transform:translateX(-50%);
+  width:calc(100% - 32px);max-width:640px;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 12px;
+  background:rgba(13,8,24,.92);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--stroke-2);
+  border-radius:22px;
+  box-shadow:0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.06);
+  z-index:1000;
+}
+.nb{
+  width:42px;height:42px;flex-shrink:0;
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--stroke);
+  color:var(--text);font-size:16px;cursor:pointer;
+  display:grid;place-items:center;
+  transition:all .18s;
+  padding:0;
+}
+.nb:hover{background:rgba(255,255,255,.09);transform:translateY(-1px)}
+.nb:active{transform:scale(.94)}
+.nb.primary{
+  background:linear-gradient(135deg,var(--violet),var(--violet-2));
+  border-color:transparent;color:#fff;
+  box-shadow:0 8px 22px rgba(124,58,237,.5);
+}
+.nb.primary:hover{box-shadow:0 10px 28px rgba(124,58,237,.7)}
+.nb.on{
+  background:rgba(251,191,36,.18);
+  border-color:rgba(251,191,36,.5);
+  color:#fbbf24;
+}
+.nav-mid{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.nav-lb{
+  font-size:10.5px;font-weight:700;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  max-width:100%;
+}
+.dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,.15);
+  cursor:pointer;transition:all .3s;
+}
+.dot:hover{background:rgba(255,255,255,.35)}
+.dot.on{background:linear-gradient(90deg,var(--violet),var(--cyan));width:18px;border-radius:4px}
+
+/* Canvas */
+#ink{position:fixed;inset:0;pointer-events:none;z-index:100;touch-action:none}
+#ink.on{pointer-events:auto;cursor:crosshair}
+
+@media (max-width:640px){
+  .brand-title{font-size:14px}
+  .chapter-pill{display:none}
+  h2{font-size:24px}
+  .lede{font-size:14.5px}
+  .nb{width:38px;height:38px;font-size:14px}
+  header{padding:12px 16px}
+  .slides{padding-bottom:200px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-wrap"></div>
+<canvas id="ink"></canvas>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">{ }</div>
+      <div class="brand-text">
+        <div class="brand-eyebrow">Power Automate · From Zero</div>
+        <div class="brand-title">Lesson 06 — Parse JSON</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="chapter-pill"><span class="dot"></span><span id="chapter">Getting started</span></div>
+      <div class="ring">
+        <svg width="38" height="38" viewBox="0 0 38 38">
+          <defs>
+            <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a78bfa"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="19" cy="19" r="16"/>
+          <circle class="fill" id="ring" cx="19" cy="19" r="16"
+            stroke-dasharray="100.53" stroke-dashoffset="100.53"/>
+        </svg>
+        <span id="ringTxt">0%</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="slides" id="slides">
+
+    <!-- 1 -->
+    <div class="slide active">
+      <div class="chip">01 · Welcome</div>
+      <h2>Turn messy JSON into data you can actually use.</h2>
+      <p class="lede">Every time your flow talks to an API, the answer comes back as a wall of text. Parse JSON is the action that turns that wall into clean, clickable fields — <strong>name</strong>, <strong>price</strong>, <strong>city</strong>, and so on.</p>
+
+      <div class="callout insight">
+        <div class="ico">🎯</div>
+        <div class="body"><strong>What you'll walk away with</strong>A working mental model of Parse JSON, the ability to generate a schema from any response, and the exact expressions to pull any field — even nested ones.</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="lbl">Before this lesson</div>
+          <p style="margin:0">You see JSON and hope for the best. Copy-paste breaks. Fields feel invisible.</p>
+        </div>
+        <div class="card">
+          <div class="lbl cyan">After this lesson</div>
+          <p style="margin:0">You spot JSON, parse it in 10 seconds, and reference any field like a pro.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="slide">
+      <div class="chip cyan">02 · The big picture</div>
+      <h2>Why APIs speak JSON in the first place.</h2>
+      <p class="lede">Before we touch Power Automate, let's answer the "why". Two apps need to trade information. One sends an order. The other sends back a weather forecast. They can't send screenshots — they send structured text. That text format is <strong>JSON</strong>.</p>
+
+      <div class="code" data-lang="json">
+<span class="b">{</span>
+  <span class="k">"city"</span>: <span class="s">"Mumbai"</span>,
+  <span class="k">"temp"</span>: <span class="n">32</span>,
+  <span class="k">"sunny"</span>: <span class="n">true</span>
+<span class="b">}</span>
+      </div>
+
+      <p>It's human-readable, machine-friendly, and universal. Every modern API uses it. Which means your flows will see it — a lot.</p>
+
+      <div class="callout mind">
+        <div class="ico">🧠</div>
+        <div class="body"><strong>Mental model</strong>JSON is like a shipping label. It has fields (name, address), and each field has a value. Apps agree on the label format so nobody has to guess.</div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="slide">
+      <div class="chip">03 · What Parse JSON is</div>
+      <h2>A translator for your flow.</h2>
+      <p class="lede">When an API responds, Power Automate sees one big string of text. It has no idea that <span class="pill">"temp"</span> is a number or that <span class="pill">"city"</span> is a word. Parse JSON hands the flow a dictionary: "here's what each field means, here's its type, here's its name."</p>
+
+      <div class="ba">
+        <div class="side bad">
+          <span class="tag">Without Parse JSON</span>
+          <p style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px">{"city":"Mumbai","temp":32}</p>
+          <p style="margin:8px 0 0;font-size:12px">One big blob. Can't pick fields.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="side good">
+          <span class="tag">With Parse JSON</span>
+          <p style="margin:0"><span class="pill">city</span> <span class="pill">temp</span></p>
+          <p style="margin:8px 0 0;font-size:12px">Two clickable chips. Drag anywhere.</p>
+        </div>
+      </div>
+
+      <div class="callout insight">
+        <div class="ico">💡</div>
+        <div class="body"><strong>Key idea</strong>Parse JSON doesn't change your data. It changes how Power Automate <em>sees</em> your data. That's it.</div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="slide">
+      <div class="chip cyan">04 · Real example</div>
+      <h2>A weather API you'll recognize.</h2>
+      <p class="lede">Imagine you hit a weather API. Here's the raw response your flow receives:</p>
+
+      <div class="code" data-lang="json">
+<span class="b">{</span>
+  <span class="k">"location"</span>: <span class="s">"Mumbai"</span>,
+  <span class="k">"temperature"</span>: <span class="n">32</span>,
+  <span class="k">"humidity"</span>: <span class="n">78</span>,
+  <span class="k">"condition"</span>: <span class="s">"Sunny"</span>
+<span class="b">}</span>
+      </div>
+
+      <p>You want to send this to a Teams channel. But you can't say <em>"use the temperature"</em> — the flow doesn't know what "temperature" is. After Parse JSON:</p>
+
+      <div class="flow">
+        <div class="flow-item cy"><div class="ic">🌐</div><div><div class="nm">HTTP — GET weather</div><div class="mt">Returns raw JSON string</div></div></div>
+        <div class="flow-item"><div class="ic">{ }</div><div><div class="nm">Parse JSON</div><div class="mt">Schema from the sample above</div></div></div>
+        <div class="flow-item gr"><div class="ic">💬</div><div><div class="nm">Post Teams message</div><div class="mt">"It's @{temperature}°C in @{location}"</div></div></div>
+      </div>
+
+      <div class="callout pro">
+        <div class="ico">✅</div>
+        <div class="body"><strong>Rule of thumb</strong>If the previous action returned JSON, the next action should be Parse JSON. Always.</div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="slide">
+      <div class="chip pink">05 · Anatomy</div>
+      <h2>Four moving parts. That's all.</h2>
+      <p class="lede">Tap any part below to see what it does.</p>
+
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>📥 Content — the raw JSON</span><span class="ar">▼</span></div>
+        <div class="acc-body">This is usually <span class="pill">body('HTTP_action_name')</span>. It's the raw text that the previous action returned. Paste it (or reference it dynamically).</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>🧬 Schema — the shape definition</span><span class="ar">▼</span></div>
+        <div class="acc-body">A small JSON block that describes every field and its type. You don't write this — Power Automate generates it when you click "Generate from sample".</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>📤 Outputs — dynamic content chips</span><span class="ar">▼</span></div>
+        <div class="acc-body">Once parsed, every field appears in the dynamic content panel. Drag it into any downstream action. Each chip is <span class="pill">body('Parse_JSON')?['fieldName']</span> under the hood.</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>🔗 Downstream — where the magic happens</span><span class="ar">▼</span></div>
+        <div class="acc-body">Send fields to Teams, SharePoint, Excel, Outlook, another API — anything. The parsed fields behave like real variables.</div>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="slide">
+      <div class="chip">06 · Schema</div>
+      <h2>The schema is just an ID card.</h2>
+      <p class="lede">A schema says: "these fields exist, here are their types, some are optional". Once Power Automate has this ID card, it can validate responses and offer you clean chips.</p>
+
+      <div class="code" data-lang="schema">
+<span class="b">{</span>
+  <span class="k">"type"</span>: <span class="s">"object"</span>,
+  <span class="k">"properties"</span>: <span class="b">{</span>
+    <span class="k">"id"</span>: <span class="b">{</span> <span class="k">"type"</span>: <span class="s">"integer"</span> <span class="b">}</span>,
+    <span class="k">"name"</span>: <span class="b">{</span> <span class="k">"type"</span>: <span class="s">"string"</span> <span class="b">}</span>
+  <span class="b">}</span>
+<span class="b">}</span>
+      </div>
+
+      <div class="callout mind">
+        <div class="ico">🧠</div>
+        <div class="body"><strong>Mental model</strong>Think of the schema as a passport check. Without it, Power Automate can't verify the shape of the incoming data. With it, every field becomes legal to use.</div>
+      </div>
+
+      <div class="callout pro">
+        <div class="ico">⚡</div>
+        <div class="body"><strong>Shortcut</strong>You almost never hand-write a schema. Click <em>Generate from sample</em> and Power Automate builds it for you.</div>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="slide">
+      <div class="chip green">07 · Generate from sample</div>
+      <h2>The 3-click setup.</h2>
+      <p class="lede">This is the button that saves beginners hours. Here's exactly what to click.</p>
+
+      <div class="grid-2">
+        <div class="card"><div class="lbl">Step 1</div><p style="margin:0">Add the <strong>Parse JSON</strong> action to your flow, right after the HTTP or connector action.</p></div>
+        <div class="card"><div class="lbl cyan">Step 2</div><p style="margin:0">Click <strong>Generate from sample</strong> and paste a <em>real</em> JSON response.</p></div>
+        <div class="card"><div class="lbl green">Step 3</div><p style="margin:0">Click <strong>Done</strong>. The schema appears. Fields show up in dynamic content.</p></div>
+        <div class="card"><div class="lbl yellow">Step 4</div><p style="margin:0">Set the <strong>Content</strong> field to <span class="pill">body('YourHTTP')</span> from the previous action.</p></div>
+      </div>
+
+      <div class="callout warn">
+        <div class="ico">⚠️</div>
+        <div class="body"><strong>Most common mistake</strong>Don't paste dynamic content into the sample box. Paste a <em>static, full, real</em> example. If you paste a partial response, only those fields become available.</div>
+      </div>
+    </div>
+
+    <!-- 8 -->
+    <div class="slide">
+      <div class="chip cyan">08 · Nested JSON</div>
+      <h2>Objects inside objects.</h2>
+      <p class="lede">Real APIs nest data. A user object contains an address object, which contains a city field. Parse JSON handles this — you just need to know how to reference it.</p>
+
+      <div class="code" data-lang="json">
+<span class="b">{</span>
+  <span class="k">"user"</span>: <span class="b">{</span>
+    <span class="k">"name"</span>: <span class="s">"Alice"</span>
+  <span class="b">}</span>,
+  <span class="k">"address"</span>: <span class="b">{</span>
+    <span class="k">"city"</span>: <span class="s">"Mumbai"</span>
+  <span class="b">}</span>
+<span class="b">}</span>
+      </div>
+
+      <p>To get the city, chain the reference pattern:</p>
+      <div class="code" data-lang="expression">body('Parse_JSON')?['address']?['city']</div>
+
+      <div class="callout insight">
+        <div class="ico">💡</div>
+        <div class="body"><strong>The pattern</strong>Every level down = another <span class="pill">?['key']</span>. Read it left to right like directions: "go into address, then into city".</div>
+      </div>
+    </div>
+
+    <!-- 9 -->
+    <div class="slide">
+      <div class="chip pink">09 · Arrays</div>
+      <h2>When JSON hands you a list.</h2>
+      <p class="lede">Sometimes the response isn't one object — it's an array of objects. A list of orders. A list of employees. A list of support tickets.</p>
+
+      <div class="code" data-lang="json">
+<span class="b">[</span>
+  <span class="b">{</span> <span class="k">"id"</span>: <span class="n">1</span>, <span class="k">"name"</span>: <span class="s">"Alice"</span> <span class="b">}</span>,
+  <span class="b">{</span> <span class="k">"id"</span>: <span class="n">2</span>, <span class="k">"name"</span>: <span class="s">"Bob"</span> <span class="b">}</span>
+<span class="b">]</span>
+      </div>
+
+      <p>Parse JSON handles it. But you can't read individual fields directly — you need to loop. Drop in an <strong>Apply to Each</strong> and reference the parsed array as its input.</p>
+
+      <div class="callout mind">
+        <div class="ico">🧠</div>
+        <div class="body"><strong>Rule</strong>Object response → access fields directly. Array response → wrap in Apply to Each first.</div>
+      </div>
+    </div>
+
+    <!-- 10 -->
+    <div class="slide">
+      <div class="chip yellow">10 · Pitfalls</div>
+      <h2>Five traps beginners fall into.</h2>
+      <p class="lede">Tap each to see why it happens and how to avoid it.</p>
+
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>1. Pasting dynamic content as the sample</span><span class="ar">▼</span></div>
+        <div class="acc-body">The schema builder needs a <strong>static</strong> JSON example. Dynamic content is empty at design time, so the schema comes out empty. Paste a real, pasted-in sample instead.</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>2. Using an incomplete sample</span><span class="ar">▼</span></div>
+        <div class="acc-body">If your sample has 2 fields but the real API returns 5, only 2 chips are available. Always paste the <strong>fullest</strong> response you've ever seen from that API.</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>3. Wrong schema type (object vs array)</span><span class="ar">▼</span></div>
+        <div class="acc-body">If the response is <span class="pill">[{ ... }]</span>, type is <strong>array</strong>. If it's <span class="pill">{ ... }</span>, type is <strong>object</strong>. Mixing them up breaks downstream actions silently.</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>4. Forgetting empty responses</span><span class="ar">▼</span></div>
+        <div class="acc-body">If the API returns nothing (empty string, 204 No Content), Parse JSON fails. Guard with a Condition action checking <span class="pill">empty(body('HTTP'))</span> first.</div>
+      </div>
+      <div class="acc" onclick="acc(this)">
+        <div class="acc-head"><span>5. Using outputs() instead of body()</span><span class="ar">▼</span></div>
+        <div class="acc-body">Parse JSON's output lives in <span class="pill">body('Parse_JSON')</span>. Using <span class="pill">outputs()</span> returns the whole wrapped envelope, not the parsed fields. That's the #1 expression mistake.</div>
+      </div>
+    </div>
+
+    <!-- 11 -->
+    <div class="slide">
+      <div class="chip green">11 · Try it</div>
+      <h2>Watch raw JSON become fields.</h2>
+      <p class="lede">Edit the JSON below, then click Parse. This mimics exactly what Parse JSON does to your flow.</p>
+
+      <div class="try">
+        <textarea id="sample">{
+  "ticketId": 4821,
+  "title": "Login fails on mobile",
+  "priority": "High",
+  "assignee": "Priya Sharma"
+}</textarea>
+        <button class="btn" onclick="doParse()">▶ Parse this JSON</button>
+        <div class="res" id="result"></div>
+      </div>
+
+      <div class="callout insight">
+        <div class="ico">💡</div>
+        <div class="body"><strong>What just happened</strong>Every key became a dynamic content chip. That's what Parse JSON unlocks in your real flows.</div>
+      </div>
+    </div>
+
+    <!-- 12 -->
+    <div class="slide">
+      <div class="chip">12 · Bug hunt</div>
+      <h2>Spot the mistake.</h2>
+      <p class="lede">A flow posts a Teams message with a parsed ticket ID. But it keeps failing. Here's the expression used:</p>
+
+      <div class="code" data-lang="expression">outputs('Parse_Ticket')?['ticketId']</div>
+
+      <p>Why does this break?</p>
+
+      <div class="quiz">
+        <div class="q">Pick the correct fix</div>
+        <div class="opt" onclick="ans(this,0)">Add a ? before outputs</div>
+        <div class="opt" onclick="ans(this,1)">Replace outputs() with body()</div>
+        <div class="opt" onclick="ans(this,2)">Wrap the expression in string()</div>
+        <div class="why" id="why12" style="display:none"><strong>Why:</strong> Parse JSON outputs live in <span class="pill">body('Action_Name')</span>. Using <span class="pill">outputs()</span> returns the whole action envelope — not your parsed field. This is the single most common expression mistake in Power Automate.</div>
+      </div>
+    </div>
+
+    <!-- 13 -->
+    <div class="slide">
+      <div class="chip cyan">13 · Best practices</div>
+      <h2>Write Parse JSON like a senior dev.</h2>
+
+      <ul class="clean">
+        <li><strong>Rename the action.</strong> <span class="pill">Parse_Ticket</span> is ten times easier to debug than <span class="pill">Parse_JSON_2</span>.</li>
+        <li><strong>Paste a real, complete sample.</strong> Made-up examples produce made-up schemas.</li>
+        <li><strong>Guard against empty responses.</strong> Wrap with a Condition checking <span class="pill">empty()</span>.</li>
+        <li><strong>Use <span class="pill">?</span> for optional fields.</strong> <span class="pill">?['phone']</span> returns null instead of crashing when the field is missing.</li>
+        <li><strong>Fall back with <span class="pill">coalesce()</span>.</strong> <span class="pill">coalesce(body('Parse')?['phone'], 'Not provided')</span> keeps your flow safe.</li>
+        <li><strong>Comment your schema.</strong> Add a Note action above Parse JSON storing the sample used to build it.</li>
+      </ul>
+    </div>
+
+    <!-- 14 -->
+    <div class="slide">
+      <div class="chip pink">14 · Compare</div>
+      <h2>Parse JSON vs Compose — settle it forever.</h2>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="lbl">Parse JSON</div>
+          <h3 style="margin-top:0">Reads the shape.</h3>
+          <p style="margin:0">Needs a schema. Exposes typed fields. The reader.</p>
+          <p style="margin-top:10px;font-size:13px;color:var(--dim-2)">Use when: the previous action returned raw JSON.</p>
+        </div>
+        <div class="card">
+          <div class="lbl pink">Compose</div>
+          <h3 style="margin-top:0">Holds a value.</h3>
+          <p style="margin:0">Stores whatever you give it. The writer.</p>
+          <p style="margin-top:10px;font-size:13px;color:var(--dim-2)">Use when: you want to build JSON or stash an intermediate value.</p>
+        </div>
+      </div>
+
+      <div class="callout insight">
+        <div class="ico">💡</div>
+        <div class="body"><strong>One-liner</strong>Compose writes JSON. Parse JSON reads it.</div>
+      </div>
+    </div>
+
+    <!-- 15 -->
+    <div class="slide">
+      <div class="chip">15 · Real scenario</div>
+      <h2>Ticket → Teams in 3 actions.</h2>
+      <p class="lede">Here's a full pattern used in production flows everywhere. A ticket API fires, you parse the payload, and post a clean summary to Teams.</p>
+
+      <div class="flow">
+        <div class="flow-item cy"><div class="ic">🌐</div><div><div class="nm">HTTP — GET ticket API</div><div class="mt">Returns raw JSON payload</div></div></div>
+        <div class="flow-item"><div class="ic">{ }</div><div><div class="nm">Parse JSON (Parse_Ticket)</div><div class="mt">Schema generated from a real ticket response</div></div></div>
+        <div class="flow-item gr"><div class="ic">💬</div><div><div class="nm">Post Teams message</div><div class="mt">Ticket ID, title, priority — all parsed fields</div></div></div>
+      </div>
+
+      <div class="callout pro">
+        <div class="ico">✅</div>
+        <div class="body"><strong>Pattern to remember</strong>Raw API → Parse JSON → Consume. Once you see this three-step rhythm, you'll use it in every integration you build.</div>
+      </div>
+    </div>
+
+    <!-- 16 -->
+    <div class="slide">
+      <div class="chip yellow">16 · Quiz</div>
+      <h2>Lock it in.</h2>
+      <p class="lede">Three questions. Wrong answers explain themselves.</p>
+
+      <div class="quiz">
+        <div class="q">1. What does Parse JSON actually do?</div>
+        <div class="opt" onclick="ans(this,0)">Converts strings to numbers</div>
+        <div class="opt" onclick="ans(this,1)">Turns raw JSON into typed dynamic content</div>
+        <div class="opt" onclick="ans(this,2)">Sends data to an external API</div>
+        <div class="why" id="w1" style="display:none"><strong>Right answer:</strong> Option 2. It reads the structure and exposes each field as a chip. It doesn't transform the data itself.</div>
+      </div>
+
+      <div class="quiz">
+        <div class="q">2. How do you reference a parsed field?</div>
+        <div class="opt" onclick="ans(this,0)">outputs('Parse_JSON')?['name']</div>
+        <div class="opt" onclick="ans(this,1)">body('Parse_JSON')?['name']</div>
+        <div class="opt" onclick="ans(this,2)">triggerBody()?['name']</div>
+        <div class="why" id="w2" style="display:none"><strong>Right answer:</strong> Option 2. Parse JSON's parsed fields live in <span class="pill">body()</span>, not <span class="pill">outputs()</span>.</div>
+      </div>
+
+      <div class="quiz">
+        <div class="q">3. Best sample for the schema builder?</div>
+        <div class="opt" onclick="ans(this,0)">A made-up minimal example</div>
+        <div class="opt" onclick="ans(this,1)">A real, full response from the API</div>
+        <div class="opt" onclick="ans(this,2)">Any JSON you find online</div>
+        <div class="why" id="w3" style="display:none"><strong>Right answer:</strong> Option 2. Only a real, complete response produces a schema that covers all fields.</div>
+      </div>
+    </div>
+
+    <!-- 17 -->
+    <div class="slide">
+      <div class="chip green">Recap</div>
+      <h2>You now speak Parse JSON.</h2>
+
+      <div class="card">
+        <div class="recap-item"><div class="chk">✓</div><div class="tx"><strong>Parse JSON</strong> turns raw JSON strings into typed, clickable dynamic content.</div></div>
+        <div class="recap-item"><div class="chk">✓</div><div class="tx">It needs two inputs: <strong>Content</strong> (raw JSON) and a <strong>Schema</strong> (the shape).</div></div>
+        <div class="recap-item"><div class="chk">✓</div><div class="tx">Use <strong>Generate from sample</strong> with a real, complete response — never a partial one.</div></div>
+        <div class="recap-item"><div class="chk">✓</div><div class="tx">Access fields with <span class="pill">body('Parse_JSON')?['key']</span>. Chain <span class="pill">?['...']</span> for nested data.</div></div>
+        <div class="recap-item"><div class="chk">✓</div><div class="tx">Arrays go through <strong>Apply to Each</strong>. Objects use direct field access.</div></div>
+        <div class="recap-item"><div class="chk">✓</div><div class="tx"><strong>Compose writes JSON. Parse JSON reads it.</strong></div></div>
+      </div>
+
+      <div class="final">
+        <div class="big">You're ready for what's next.</div>
+        <p>Next lesson: <strong>Child Flows</strong> — how to break a giant flow into clean, reusable pieces.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nav">
+    <button class="nb" id="prev" aria-label="Previous">←</button>
+    <button class="nb" id="clear" aria-label="Clear" title="Clear drawings">🧹</button>
+    <button class="nb" id="pen" aria-label="Pencil" title="Draw">✏️</button>
+    <div class="nav-mid">
+      <div class="nav-lb" id="navLb">Welcome</div>
+      <div class="dots" id="dots"></div>
+    </div>
+    <button class="nb" id="full" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+    <button class="nb primary" id="next" aria-label="Next">→</button>
+  </div>
+</div>
+
+<script>
+// ===== Slide data =====
+const CH = [
+  'Getting started','Big picture','Core idea','Real example','Anatomy',
+  'Schema','Generate','Nested JSON','Arrays','Pitfalls',
+  'Try it','Bug hunt','Best practices','Compare','Scenario',
+  'Quiz','Recap'
+];
+const CHAPTERS = {
+  0:'Getting started',1:'Foundations',2:'Foundations',3:'Foundations',
+  4:'How it works',5:'How it works',6:'How it works',
+  7:'Advanced',8:'Advanced',9:'Mistakes',
+  10:'Practice',11:'Practice',12:'Best practice',13:'Compare',
+  14:'Real world',15:'Check',16:'Complete'
+};
+
+const slides = document.querySelectorAll('.slide');
+const dots = document.getElementById('dots');
+const navLb = document.getElementById('navLb');
+const chapter = document.getElementById('chapter');
+const ring = document.getElementById('ring');
+const ringTxt = document.getElementById('ringTxt');
+const slidesEl = document.getElementById('slides');
+let cur = 0;
+
+const CIRC = 2 * Math.PI * 16; // r=16
+
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' on' : '');
+  d.onclick = () => go(i);
+  dots.appendChild(d);
+});
+
+function go(i) {
+  // Save annotation
+  if (cur >= 0 && ink.width > 0) slideInk[cur] = ink.toDataURL();
+  // Reset pen on slide change
+  isPen = false; isDrawing = false;
+  ink.classList.remove('on'); penBtn.classList.remove('on');
+
+  slides[cur].classList.remove('active');
+  dots.children[cur].classList.remove('on');
+
+  cur = Math.max(0, Math.min(i, slides.length - 1));
+
+  slides[cur].classList.add('active');
+  dots.children[cur].classList.add('on');
+
+  navLb.textContent = CH[cur] || '';
+  chapter.textContent = CHAPTERS[cur] || 'Lesson';
+  const p = (cur + 1) / slides.length;
+  ring.style.strokeDasharray = CIRC;
+  ring.style.strokeDashoffset = CIRC * (1 - p);
+  ringTxt.textContent = Math.round(p * 100) + '%';
+
+  slidesEl.scrollTop = 0;
+  ctx.clearRect(0, 0, ink.width, ink.height);
+
+  if (slideInk[cur]) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, ink.width / dpr, ink.height / dpr);
+    img.src = slideInk[cur];
+  }
+}
+
+// ===== Nav buttons =====
+function bind(btn, delta) {
+  let touched = false;
+  btn.addEventListener('touchstart', e => {
+    touched = true; e.preventDefault(); go(cur + delta);
+  }, { passive: false });
+  btn.addEventListener('click', () => {
+    if (touched) { touched = false; return; }
+    go(cur + delta);
+  });
+}
+bind(document.getElementById('next'), 1);
+bind(document.getElementById('prev'), -1);
+
+// ===== Keyboard =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(cur + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') go(cur - 1);
+  if (e.key.toLowerCase() === 'f') fullToggle();
+});
+
+// ===== Swipe =====
+let sx = 0, sy = 0;
+slidesEl.addEventListener('touchstart', e => {
+  sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+}, { passive: true });
+slidesEl.addEventListener('touchend', e => {
+  if (isPen) return;
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+    dx < 0 ? go(cur + 1) : go(cur - 1);
+  }
+}, { passive: true });
+
+// ===== Accordion =====
+function acc(el) { el.classList.toggle('open'); }
+
+// ===== Try it =====
+function doParse() {
+  const raw = document.getElementById('sample').value;
+  const res = document.getElementById('result');
+  res.innerHTML = '';
+  try {
+    const obj = JSON.parse(raw);
+    let i = 0;
+    for (const k in obj) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.animationDelay = (i * 0.05) + 's';
+      row.innerHTML = `<span class="k">${k}</span><span class="v">${obj[k]}</span>`;
+      res.appendChild(row);
+      i++;
+    }
+  } catch (err) {
+    res.innerHTML = `<div class="err">⚠️ Invalid JSON — ${err.message}</div>`;
+  }
+}
+
+// ===== Quiz =====
+function ans(el, correct) {
+  const quiz = el.parentElement;
+  if (quiz.querySelector('.correct') || quiz.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  quiz.querySelectorAll('.opt').forEach(o => {
+    o.classList.add('dis');
+    if (!correct && o.getAttribute('onclick').includes(',1)')) o.classList.add('correct');
+  });
+  const why = quiz.querySelector('.why');
+  if (why) why.style.display = 'block';
+}
+
+// ===== Ink / Pen =====
+const ink = document.getElementById('ink');
+const ctx = ink.getContext('2d');
+const penBtn = document.getElementById('pen');
+const clearBtn = document.getElementById('clear');
+const fullBtn = document.getElementById('full');
+let isPen = false, isDrawing = false, lx = 0, ly = 0;
+let dpr = 1;
+const slideInk = {};
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  ink.width = window.innerWidth * dpr;
+  ink.height = window.innerHeight * dpr;
+  ink.style.width = window.innerWidth + 'px';
+  ink.style.height = window.innerHeight + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+resize();
+window.addEventListener('resize', () => {
+  resize();
+  if (slideInk[cur]) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, ink.width / dpr, ink.height / dpr);
+    img.src = slideInk[cur];
+  }
+});
+window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+ink.addEventListener('pointerdown', e => {
+  if (!isPen) return;
+  isDrawing = true; lx = e.clientX; ly = e.clientY;
+});
+ink.addEventListener('pointermove', e => {
+  if (!isDrawing || !isPen) return;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#fbbf24';
+  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(251,191,36,.5)';
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(e.clientX, e.clientY); ctx.stroke();
+  ctx.shadowBlur = 0;
+  lx = e.clientX; ly = e.clientY;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt =>
+  ink.addEventListener(evt, () => isDrawing = false)
+);
+
+penBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  isPen = !isPen;
+  ink.classList.toggle('on', isPen);
+  penBtn.classList.toggle('on', isPen);
+  if (!isPen) isDrawing = false;
+});
+
+clearBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  ctx.clearRect(0, 0, ink.width, ink.height);
+  delete slideInk[cur];
+  isPen = false; isDrawing = false;
+  ink.classList.remove('on'); penBtn.classList.remove('on');
+});
+
+function fullToggle() {
+  const el = document.documentElement;
+  const isF = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!isF) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || (()=>{})).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || (()=>{})).call(document);
+  }
+}
+fullBtn.addEventListener('click', e => { e.stopPropagation(); fullToggle(); });
+
+// ===== Init =====
+go(0);
+</script>
+</body>
+</html>

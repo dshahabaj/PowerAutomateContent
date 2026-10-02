@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Power Automate — Design System Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Inter',sans-serif; }
+
+:root {
+  --bg: #0a0612;
+  --bg-2: #13091c;
+  --paper: #16101f;
+  --paper-2: #1e1629;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+
+  /* Power Automate designer palette (light mode) */
+  --pa-bg: #f3f2f1;
+  --pa-canvas: #faf9f8;
+  --pa-card: #ffffff;
+  --pa-text: #201f1e;
+  --pa-text-dim: #605e5c;
+  --pa-border: #edebe9;
+
+  /* Action type colors (from real PA) */
+  --trigger: #0078d4;
+  --control: #8764b8;
+  --data: #107c10;
+  --ai: #c239b3;
+  --http: #038387;
+  --error: #d13438;
+  --compose: #0078d4;
+
+  --accent: #a78bfa;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+/* ================= TOP NAV ================= */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,6,18,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #a78bfa, #22d3ee);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+.brand-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.nav-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.nav-link {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.nav-link:hover {
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+}
+.nav-link.active {
+  background: rgba(167,139,250,.15);
+  border-color: rgba(167,139,250,.4);
+  color: #c4b5fd;
+}
+
+/* ================= PAGE ================= */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.section {
+  margin-bottom: 80px;
+  padding-top: 40px;
+}
+.section:first-child { padding-top: 0; }
+.section-header {
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.section-number {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.section-desc {
+  font-size: 15px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  max-width: 720px;
+}
+
+.demo-block {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.demo-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+/* ================= COMPONENT 1: PA DESIGNER CANVAS ================= */
+.pa-canvas {
+  background: var(--pa-canvas);
+  border-radius: 16px;
+  padding: 40px 24px;
+  background-image:
+    radial-gradient(circle, #d2d0ce 1px, transparent 1px),
+    radial-gradient(circle, #d2d0ce 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.pa-action {
+  background: var(--pa-card);
+  border-radius: 8px;
+  border: 1px solid var(--pa-border);
+  box-shadow: 0 1.6px 3.6px rgba(0,0,0,.08), 0 0.3px 0.9px rgba(0,0,0,.06);
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Segoe UI', sans-serif;
+}
+.pa-action + .pa-action { margin-top: 34px; }
+
+.pa-action-left-bar {
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--trigger);
+}
+.pa-action.control .pa-action-left-bar { background: var(--control); }
+.pa-action.data .pa-action-left-bar { background: var(--data); }
+.pa-action.http .pa-action-left-bar { background: var(--http); }
+.pa-action.ai .pa-action-left-bar { background: var(--ai); }
+.pa-action.compose .pa-action-left-bar { background: var(--compose); }
+.pa-action.error .pa-action-left-bar { background: var(--error); }
+
+.pa-action-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 12px 0 12px 12px;
+  font-size: 20px;
+}
+
+.pa-action-body {
+  flex: 1;
+  padding: 12px 16px 14px 8px;
+  min-width: 0;
+}
+
+.pa-action-connector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--pa-text-dim);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.pa-action-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pa-text);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.pa-action-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pa-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--pa-text-dim);
+}
+.pa-field-label {
+  color: var(--pa-text-dim);
+  min-width: 60px;
+  font-size: 11px;
+}
+.pa-field-value {
+  color: var(--pa-text);
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  background: #f3f2f1;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pa-connector-line {
+  width: 2px;
+  height: 24px;
+  background: #c8c6c4;
+  margin: 0 auto;
+  position: relative;
+}
+.pa-connector-line::after {
+  content: '▼';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #c8c6c4;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.pa-plus {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #edebe9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pa-text-dim);
+  font-size: 14px;
+  font-weight: 400;
+  box-shadow: 0 1.6px 3.6px rgba(0,0,0,.08);
+}
+
+.pa-action-wrapper {
+  position: relative;
+}
+
+.pa-success-tick {
+  position: absolute;
+  right: -12px;
+  top: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #dff6dd;
+  color: #107c10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+
+/* ================= COMPONENT 2: RUN HISTORY ================= */
+.pa-run {
+  background: var(--pa-card);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--pa-border);
+  font-family: 'Segoe UI', sans-serif;
+}
+.pa-run-header {
+  padding: 16px 20px;
+  background: #faf9f8;
+  border-bottom: 1px solid var(--pa-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pa-run-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--pa-text);
+  font-weight: 600;
+}
+.pa-run-status .status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #107c10;
+}
+.pa-run-status .status-dot.fail { background: #d13438; }
+.pa-run-meta {
+  font-size: 12px;
+  color: var(--pa-text-dim);
+  display: flex;
+  gap: 16px;
+}
+.pa-run-timeline {
+  padding: 12px 20px 20px;
+}
+.pa-run-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--pa-border);
+  font-size: 13px;
+  color: var(--pa-text);
+}
+.pa-run-step:last-child { border-bottom: none; }
+.pa-run-step .step-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #dff6dd;
+  color: #107c10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.pa-run-step .step-icon.fail {
+  background: #fde7e9;
+  color: #d13438;
+}
+.pa-run-step .step-name {
+  flex: 1;
+  min-width: 0;
+}
+.pa-run-step .step-time {
+  color: var(--pa-text-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pa-run-io {
+  margin-top: 16px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 14px 16px;
+  color: #d4d4d4;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.pa-run-io .label {
+  color: #569cd6;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: block;
+}
+.pa-run-io .val-key { color: #9cdcfe; }
+.pa-run-io .val-str { color: #ce9178; }
+.pa-run-io .val-num { color: #b5cea8; }
+.pa-run-io .val-bool { color: #569cd6; }
+.pa-run-io .val-null { color: #569cd6; font-style: italic; }
+.pa-run-io .val-punct { color: #d4d4d4; }
+.pa-run-io .section {
+  margin-bottom: 14px;
+}
+.pa-run-io .section:last-child { margin-bottom: 0; }
+
+/* ================= COMPONENT 3: DYNAMIC CONTENT PANEL ================= */
+.pa-dynamic {
+  background: var(--pa-card);
+  border-radius: 10px;
+  border: 1px solid var(--pa-border);
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 320px;
+}
+.pa-dynamic-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--pa-border);
+  background: #faf9f8;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pa-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pa-dynamic-search {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--pa-border);
+}
+.pa-dynamic-search input {
+  width: 100%;
+  background: #faf9f8;
+  border: 1px solid var(--pa-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--pa-text);
+  outline: none;
+}
+.pa-dynamic-list {
+  padding: 8px 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.pa-dynamic-group {
+  padding: 6px 14px 10px;
+}
+.pa-dynamic-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pa-text-dim);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pa-dynamic-group-title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #0078d4;
+}
+.pa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(180deg, #e8f3ff, #d9ecff);
+  border: 1px solid #b3d9ff;
+  color: #0078d4;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: default;
+}
+.pa-chip::before {
+  content: '⊞';
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+/* ================= COMPONENT 4: EXPRESSION EDITOR ================= */
+.pa-expr {
+  background: #252526;
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: 'Consolas','Courier New',monospace;
+  border: 1px solid #3e3e42;
+  max-width: 620px;
+}
+.pa-expr-header {
+  padding: 12px 16px;
+  background: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+  font-size: 12px;
+  color: #cccccc;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Segoe UI', sans-serif;
+}
+.pa-expr-header::before {
+  content: 'ƒ';
+  font-style: italic;
+  color: #569cd6;
+  font-size: 16px;
+}
+.pa-expr-input {
+  padding: 16px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-size: 13px;
+  line-height: 1.6;
+  border-bottom: 1px solid #3e3e42;
+  overflow-x: auto;
+  white-space: pre;
+}
+.pa-expr-input .fn { color: #dcdcaa; }
+.pa-expr-input .str { color: #ce9178; }
+.pa-expr-input .punct { color: #d4d4d4; }
+.pa-expr-input .var { color: #9cdcfe; }
+.pa-expr-functions {
+  padding: 12px 16px;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #2d2d30;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pa-expr-cat {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #858585;
+}
+.pa-expr-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pa-expr-fn {
+  background: #3e3e42;
+  color: #dcdcaa;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ================= COMPONENT 5: JSON TRANSFORMATION ================= */
+.pa-transform {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+.pa-transform-stage {
+  text-align: center;
+}
+.pa-transform-stage-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+.pa-transform-box {
+  background: #0a0612;
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #d4d4d4;
+  line-height: 1.7;
+  text-align: left;
+  min-height: 120px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.pa-transform-box .k { color: #9cdcfe; }
+.pa-transform-box .s { color: #ce9178; }
+.pa-transform-box .n { color: #b5cea8; }
+.pa-transform-box .b { color: #569cd6; }
+
+.pa-transform-arrow {
+  font-size: 24px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pa-transform-action {
+  background: linear-gradient(135deg, #0078d4, #4a90e2);
+  color: white;
+  border-radius: 12px;
+  padding: 20px 24px;
+  text-align: center;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 0 8px 24px rgba(0,120,212,.3);
+}
+.pa-transform-action .icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.pa-transform-action .name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pa-transform-chips {
+  background: #0a0612;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 120px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: flex-start;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.pa-transform-chips .pa-chip {
+  background: linear-gradient(180deg, #1e3a5f, #16304a);
+  border-color: #2d5f8f;
+  color: #7dd3fc;
+}
+
+/* ================= COMPONENT 6: ERROR VIEWER ================= */
+.pa-error {
+  background: var(--pa-card);
+  border-radius: 10px;
+  border: 1px solid var(--pa-border);
+  overflow: hidden;
+  font-family: 'Segoe UI', sans-serif;
+  max-width: 560px;
+}
+.pa-error-header {
+  background: #fde7e9;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #f3b8bc;
+}
+.pa-error-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #d13438;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.pa-error-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a4262c;
+}
+.pa-error-code {
+  font-size: 11px;
+  color: #a4262c;
+  font-family: 'Consolas','Courier New',monospace;
+  margin-top: 2px;
+}
+.pa-error-body {
+  padding: 16px 18px;
+  background: white;
+}
+.pa-error-msg {
+  font-size: 13px;
+  color: var(--pa-text);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.pa-error-msg code {
+  background: #f3f2f1;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #a4262c;
+}
+.pa-error-details {
+  font-size: 11px;
+  color: var(--pa-text-dim);
+  padding: 10px 12px;
+  background: #faf9f8;
+  border-radius: 6px;
+  font-family: 'Consolas','Courier New',monospace;
+  line-height: 1.6;
+}
+
+/* ================= COMPONENT 7: INTERACTIVE SANDBOX ================= */
+.pa-sandbox {
+  background: var(--paper-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+}
+.pa-sandbox-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.pa-sandbox-badge {
+  background: rgba(34,211,238,.12);
+  color: #22d3ee;
+  border: 1px solid rgba(34,211,238,.4);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.pa-sandbox-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+.pa-sandbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.pa-sandbox-grid textarea,
+.pa-sandbox-grid input {
+  width: 100%;
+  background: #0a0612;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #d4d4d4;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+  min-height: 160px;
+}
+.pa-sandbox-grid input { min-height: 0; }
+.pa-sandbox-grid textarea:focus,
+.pa-sandbox-grid input:focus {
+  border-color: rgba(34,211,238,.5);
+}
+.pa-sandbox-btn {
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: transform .15s;
+}
+.pa-sandbox-btn:hover { transform: scale(1.02); }
+.pa-sandbox-result {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #0a0612;
+  border: 1px solid rgba(34,211,238,.3);
+  border-radius: 10px;
+  font-family: 'Consolas','Courier New',monospace;
+  font-size: 12px;
+  color: #7dd3fc;
+  line-height: 1.7;
+  min-height: 60px;
+}
+
+/* Flow puzzle */
+.pa-puzzle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pa-puzzle-piece {
+  background: white;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: var(--pa-text);
+  border-left: 4px solid var(--http);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: grab;
+  user-select: none;
+}
+.pa-puzzle-piece.control { border-left-color: var(--control); }
+.pa-puzzle-piece.data { border-left-color: var(--data); }
+.pa-puzzle-piece.trigger { border-left-color: var(--trigger); }
+.pa-puzzle-piece.dragging { opacity: 0.5; }
+.pa-puzzle-piece .handle { color: #c8c6c4; font-size: 16px; }
+.pa-puzzle-piece .piece-name { flex: 1; font-weight: 600; }
+.pa-puzzle-piece .piece-idx {
+  background: #f3f2f1;
+  color: var(--pa-text-dim);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Consolas',monospace;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+  .pa-transform {
+    grid-template-columns: 1fr;
+  }
+  .pa-transform-arrow {
+    transform: rotate(90deg);
+  }
+  .pa-sandbox-grid {
+    grid-template-columns: 1fr;
+  }
+  .section-title { font-size: 24px; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand">
+    <div class="brand-icon">{ }</div>
+    <div>
+      <div class="brand-text">Power Automate — Design System</div>
+      <div class="brand-sub">Component Library · v1.0</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="scrollToSection(0)">Canvas</button>
+    <button class="nav-link" onclick="scrollToSection(1)">Run History</button>
+    <button class="nav-link" onclick="scrollToSection(2)">Chips</button>
+    <button class="nav-link" onclick="scrollToSection(3)">Expression</button>
+    <button class="nav-link" onclick="scrollToSection(4)">Transform</button>
+    <button class="nav-link" onclick="scrollToSection(5)">Error</button>
+    <button class="nav-link" onclick="scrollToSection(6)">Sandbox</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ============ COMPONENT 1: DESIGNER CANVAS ============ -->
+  <section class="section" id="section-0">
+    <div class="section-header">
+      <div class="section-number">Component 01</div>
+      <div class="section-title">Power Automate Canvas</div>
+      <p class="section-desc">
+        A pixel-accurate recreation of the Power Automate designer. Every lesson will use this to show flows being built. Notice the connector badges, action colors, connection lines, and success ticks — all matching the real product.
+      </p>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">Example flow — Weather API → Parse JSON → SharePoint → Teams</div>
+      <div class="pa-canvas">
+
+        <div class="pa-action-wrapper">
+          <div class="pa-action http">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">🌐</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">
+                <span>HTTP</span>
+              </div>
+              <div class="pa-action-name">HTTP — Get weather</div>
+              <div class="pa-action-fields">
+                <div class="pa-field">
+                  <span class="pa-field-label">Method</span>
+                  <span class="pa-field-value">GET</span>
+                </div>
+                <div class="pa-field">
+                  <span class="pa-field-label">URI</span>
+                  <span class="pa-field-value">https://api.openweathermap.org/data/2.5/weather</span>
+                </div>
+              </div>
+            </div>
+            <div class="pa-success-tick">✓</div>
+          </div>
+          <div class="pa-connector-line"></div>
+        </div>
+
+        <div class="pa-action-wrapper">
+          <div class="pa-action data">
+            <div class="pa-action-left-bar"></div>
+            <div class="pa-action-icon">{ }</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">
+                <span>Data Operation</span>
+              </div>
+              <div class="pa-action-name">Parse JSON — Weather response</div>
+              <div class="pa-action-fields">
+                <div class="pa-field">
+                  <span class="pa-field-label">Content</span>
+                  <span class="pa-field-value">body('HTTP_Get_weather')</span>
+                </div>
+                <div class="pa-field">
+                  <span class="pa-field-label">Schema</span>
+                  <span class="pa-field-value">{ "type": "object", ... }</span>
+                </div>
+              </div>
+            </div>
+            <div class="pa-success-tick">✓</div>
+          </div>
+          <div class="pa-connector-line"></div>
+        </div>
+
+        <div class="pa-action-wrapper">
+          <div class="pa-action">
+            <div class="pa-action-left-bar" style="background:#0364a8"></div>
+            <div class="pa-action-icon" style="color:#0364a8">📊</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">
+                <span>SharePoint</span>
+              </div>
+              <div class="pa-action-name">Create item — Weather log</div>
+              <div class="pa-action-fields">
+                <div class="pa-field">
+                  <span class="pa-field-label">Title</span>
+                  <span class="pa-field-value">Weather — Mumbai</span>
+                </div>
+                <div class="pa-field">
+                  <span class="pa-field-label">Temp</span>
+                  <span class="pa-field-value">32</span>
+                </div>
+              </div>
+            </div>
+            <div class="pa-success-tick">✓</div>
+          </div>
+          <div class="pa-connector-line"></div>
+        </div>
+
+        <div class="pa-action-wrapper">
+          <div class="pa-action">
+            <div class="pa-action-left-bar" style="background:#6264a7"></div>
+            <div class="pa-action-icon" style="color:#6264a7">💬</div>
+            <div class="pa-action-body">
+              <div class="pa-action-connector">
+                <span>Microsoft Teams</span>
+              </div>
+              <div class="pa-action-name">Post message in a chat or channel</div>
+              <div class="pa-action-fields">
+                <div class="pa-field">
+                  <span class="pa-field-label">Message</span>
+                  <span class="pa-field-value">Weather update for Mumbai: 32°C, Sunny</span>
+                </div>
+              </div>
+            </div>
+            <div class="pa-success-tick">✓</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENT 2: RUN HISTORY ============ -->
+  <section class="section" id="section-1">
+    <div class="section-header">
+      <div class="section-number">Component 02</div>
+      <div class="section-title">Run History Panel</div>
+      <p class="section-desc">
+        The expandable run history from a real Power Automate execution. Shows action timings, status, and raw INPUTS/OUTPUTS with syntax highlighting. Use this to show what happens after a flow runs.
+      </p>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">Successful run — with INPUTS and OUTPUTS</div>
+      <div class="pa-run">
+        <div class="pa-run-header">
+          <div class="pa-run-status">
+            <span class="status-dot"></span>
+            Succeeded
+          </div>
+          <div class="pa-run-meta">
+            <span>2 minutes ago</span>
+            <span>Duration: 2.4s</span>
+          </div>
+        </div>
+        <div class="pa-run-timeline">
+          <div class="pa-run-step">
+            <span class="step-icon">✓</span>
+            <span class="step-name">HTTP — Get weather</span>
+            <span class="step-time">0.8s</span>
+          </div>
+          <div class="pa-run-step">
+            <span class="step-icon">✓</span>
+            <span class="step-name">Parse JSON — Weather response</span>
+            <span class="step-time">0.3s</span>
+          </div>
+          <div class="pa-run-step">
+            <span class="step-icon">✓</span>
+            <span class="step-name">Create item — Weather log</span>
+            <span class="step-time">0.9s</span>
+          </div>
+          <div class="pa-run-step">
+            <span class="step-icon">✓</span>
+            <span class="step-name">Post message in a chat or channel</span>
+            <span class="step-time">0.4s</span>
+          </div>
+
+          <div class="pa-run-io">
+            <div class="section">
+              <span class="label">Inputs · Parse JSON</span>
+              <span class="val-punct">{</span><br>
+              &nbsp;&nbsp;<span class="val-key">"content"</span><span class="val-punct">: </span><span class="val-str">"{\"location\":\"Mumbai\",\"temperature\":32}"</span><span class="val-punct">,</span><br>
+              &nbsp;&nbsp;<span class="val-key">"schema"</span><span class="val-punct">: </span><span class="val-str">"{ ... }"</span><br>
+              <span class="val-punct">}</span>
+            </div>
+            <div class="section">
+              <span class="label">Outputs · Parse JSON</span>
+              <span class="val-punct">{</span><br>
+              &nbsp;&nbsp;<span class="val-key">"location"</span><span class="val-punct">: </span><span class="val-str">"Mumbai"</span><span class="val-punct">,</span><br>
+              &nbsp;&nbsp;<span class="val-key">"temperature"</span><span class="val-punct">: </span><span class="val-num">32</span><span class="val-punct">,</span><br>
+              &nbsp;&nbsp;<span class="val-key">"humidity"</span><span class="val-punct">: </span><span class="val-num">78</span><span class="val-punct">,</span><br>
+              &nbsp;&nbsp;<span class="val-key">"condition"</span><span class="val-punct">: </span><span class="val-str">"Sunny"</span><span class="val-punct">,</span><br>
+              &nbsp;&nbsp;<span class="val-key">"cached"</span><span class="val-punct">: </span><span class="val-bool">false</span><br>
+              <span class="val-punct">}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">Failed run — with error output</div>
+      <div class="pa-run">
+        <div class="pa-run-header">
+          <div class="pa-run-status">
+            <span class="status-dot fail"></span>
+            Failed
+          </div>
+          <div class="pa-run-meta">
+            <span>5 minutes ago</span>
+            <span>Duration: 0.6s</span>
+          </div>
+        </div>
+        <div class="pa-run-timeline">
+          <div class="pa-run-step">
+            <span class="step-icon">✓</span>
+            <span class="step-name">When an HTTP request is received</span>
+            <span class="step-time">0.1s</span>
+          </div>
+          <div class="pa-run-step">
+            <span class="step-icon fail">✕</span>
+            <span class="step-name">Parse JSON — Weather response</span>
+            <span class="step-time">0.5s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENT 3: DYNAMIC CONTENT ============ -->
+  <section class="section" id="section-2">
+    <div class="section-header">
+      <div class="section-number">Component 03</div>
+      <div class="section-title">Dynamic Content Panel</div>
+      <p class="section-desc">
+        The blue chips you drag into action fields. This is where beginners get confused — they don't know that chips only appear after an action has been run. Show this panel to teach that concept.
+      </p>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">Dynamic content — chips from multiple actions</div>
+      <div class="pa-dynamic">
+        <div class="pa-dynamic-header">
+          <span>⚡</span>
+          <span>Dynamic content</span>
+        </div>
+        <div class="pa-dynamic-search">
+          <input type="text" placeholder="Search dynamic content">
+        </div>
+        <div class="pa-dynamic-list">
+          <div class="pa-dynamic-group">
+            <div class="pa-dynamic-group-title">Parse JSON — Weather</div>
+            <div class="pa-chips">
+              <span class="pa-chip">location</span>
+              <span class="pa-chip">temperature</span>
+              <span class="pa-chip">humidity</span>
+              <span class="pa-chip">condition</span>
+              <span class="pa-chip">forecast</span>
+            </div>
+          </div>
+          <div class="pa-dynamic-group">
+            <div class="pa-dynamic-group-title">HTTP — Get weather</div>
+            <div class="pa-chips">
+              <span class="pa-chip">statusCode</span>
+              <span class="pa-chip">headers</span>
+              <span class="pa-chip">body</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENT 4: EXPRESSION EDITOR ============ -->
+  <section class="section" id="section-3">
+    <div class="section-header">
+      <div class="section-number">Component 04</div>
+      <div class="section-title">Expression Editor</div>
+      <p class="section-desc">
+        The dark popup where you write workflow expressions. Syntax highlighted to match the real tool. Include one of these whenever you teach an expression — viewers learn faster when they see it in context.
+      </p>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">Building a greeting string with concat()</div>
+      <div class="pa-expr">
+        <div class="pa-expr-header">Expression</div>
+        <div class="pa-expr-input"><span class="fn">concat</span><span class="punct">(</span><span class="str">'Hello, '</span><span class="punct">, </span><span class="var">item</span><span class="punct">()?[</span><span class="str">'name'</span><span class="punct">])</span></div>
+        <div class="pa-expr-functions">
+          <div class="pa-expr-cat">String functions</div>
+          <div class="pa-expr-list">
+            <span class="pa-expr-fn">concat</span>
+            <span class="pa-expr-fn">substring</span>
+            <span class="pa-expr-fn">replace</span>
+            <span class="pa-expr-fn">split</span>
+            <span class="pa-expr-fn">toLower</span>
+            <span class="pa-expr-fn">toUpper</span>
+            <span class="pa-expr-fn">trim</span>
+          </div>
+          <div class="pa-expr-cat">Collection functions</div>
+          <div class="pa-expr-list">
+            <span class="pa-expr-fn">first</span>
+            <span class="pa-expr-fn">last</span>
+            <span class="pa-expr-fn">length</span>
+            <span class="pa-expr-fn">join</span>
+            <span class="pa-expr-fn">contains</span>
+          </div>
+          <div class="pa-expr-cat">Logical functions</div>
+          <div class="pa-expr-list">
+            <span class="pa-expr-fn">if</span>
+            <span class="pa-expr-fn">equals</span>
+            <span class="pa-expr-fn">empty</span>
+            <span class="pa-expr-fn">coalesce</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENT 5: JSON TRANSFORMATION ============ -->
+  <section class="section" id="section-4">
+    <div class="section-header">
+      <div class="section-number">Component 05</div>
+      <div class="section-title">JSON Transformation Visualizer</div>
+      <p class="section-desc">
+        The core concept of Parse JSON shown visually. Raw JSON flows into Parse JSON and emerges as drag-able chips. Use this to make the "why" obvious before showing the "how".
+      </p>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">How Parse JSON transforms raw data into usable fields</div>
+      <div class="pa-transform">
+        <div class="pa-transform-stage">
+          <div class="pa-transform-stage-label">Raw JSON</div>
+          <div class="pa-transform-box">
+            <span class="punct">{</span><br>
+            &nbsp;&nbsp;<span class="k">"id"</span>: <span class="n">101</span>,<br>
+            &nbsp;&nbsp;<span class="k">"name"</span>: <span class="s">"Shahabaj"</span>,<br>
+            &nbsp;&nbsp;<span class="k">"email"</span>: <span class="s">"s@example.com"</span>,<br>
+            &nbsp;&nbsp;<span class="k">"active"</span>: <span class="b">true</span><br>
+            <span class="punct">}</span>
+          </div>
+        </div>
+        <div class="pa-transform-arrow">→</div>
+        <div class="pa-transform-stage">
+          <div class="pa-transform-action">
+            <div class="icon">{ }</div>
+            <div class="name">Parse JSON</div>
+          </div>
+        </div>
+        <div class="pa-transform-arrow">→</div>
+        <div class="pa-transform-stage">
+          <div class="pa-transform-stage-label">Usable fields</div>
+          <div class="pa-transform-chips">
+            <span class="pa-chip">id</span>
+            <span class="pa-chip">name</span>
+            <span class="pa-chip">email</span>
+            <span class="pa-chip">active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENT 6: ERROR VIEWER ============ -->
+  <section class="section" id="section-5">
+    <div class="section-header">
+      <div class="section-number">Component 06</div>
+      <div class="section-title">Error State Viewer</div>
+      <p class="section-desc">
+        What viewers actually see when a flow breaks. This teaches through failure — the most memorable way. Every lesson should show at least 2-3 error states.
+      </p>
+    </div>
+
+    <div class="demo-block">
+      <div class="demo-label">Invalid JSON error in Parse JSON</div>
+      <div class="pa-error">
+        <div class="pa-error-header">
+          <div class="pa-error-icon">✕</div>
+          <div>
+            <div class="pa-error-title">Unable to parse the JSON</div>
+            <div class="pa-error-code">InvalidTemplate · 400</div>
+          </div>
+        </div>
+        <div class="pa-error-body">
+          <div class="pa-error-msg">
+            The template validation failed: <code>Unexpected token '}' at position 17</code>. Check that your sample is valid JSON and that the schema matches.
+          </div>
+          <div class="pa-error-details">
+            at position 17: {"name": "Alice",}<br>
+            ------------------------------------^<br>
+            Expected a string key, got: '}'
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENT 7: INTERACTIVE SANDBOX ============ -->
+  <section class="section" id="section-6">
+    <div class="section-header">
+      <div class="section-number">Component 07</div>
+      <div class="section-title">Interactive Sandbox</div>
+      <p class="section-desc">
+        Live mini-tools viewers can play with during the lesson. Paste JSON → see schema. Type expression → see result. Drag actions → build a flow. Engagement sky-rockets with these.
+      </p>
+    </div>
+
+    <!-- Sandbox 1: JSON Playground -->
+    <div class="demo-block">
+      <div class="demo-label">Sandbox 1 — JSON Playground</div>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header">
+          <span class="pa-sandbox-badge">Interactive</span>
+          <span class="pa-sandbox-title">Paste JSON → see schema generated</span>
+        </div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <textarea id="sandbox1-input">{
+  "id": 101,
+  "name": "Shahabaj",
+  "email": "s@example.com",
+  "roles": ["Admin", "Developer"]
+}</textarea>
+            <button class="pa-sandbox-btn" onclick="sandboxJSON()">Generate schema →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="sandbox1-output">Schema will appear here...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sandbox 2: Expression Tester -->
+    <div class="demo-block">
+      <div class="demo-label">Sandbox 2 — Expression Tester</div>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header">
+          <span class="pa-sandbox-badge">Interactive</span>
+          <span class="pa-sandbox-title">Type an expression → see live result</span>
+        </div>
+        <div class="pa-sandbox-grid">
+          <div>
+            <textarea id="sandbox2-input" style="min-height:80px;">concat('Hello, ', 'Shahabaj')</textarea>
+            <button class="pa-sandbox-btn" onclick="sandboxExpr()">Evaluate →</button>
+          </div>
+          <div>
+            <div class="pa-sandbox-result" id="sandbox2-output">Result will appear here...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sandbox 3: Flow Puzzle -->
+    <div class="demo-block">
+      <div class="demo-label">Sandbox 3 — Flow Order Puzzle (drag to reorder)</div>
+      <div class="pa-sandbox">
+        <div class="pa-sandbox-header">
+          <span class="pa-sandbox-badge">Interactive</span>
+          <span class="pa-sandbox-title">Drag actions into the correct order</span>
+        </div>
+        <div class="pa-puzzle" id="puzzle">
+          <div class="pa-puzzle-piece data" draggable="true">
+            <span class="handle">⋮⋮</span>
+            <span class="piece-name">Parse JSON</span>
+            <span class="piece-idx">?</span>
+          </div>
+          <div class="pa-puzzle-piece trigger" draggable="true">
+            <span class="handle">⋮⋮</span>
+            <span class="piece-name">When a new email arrives</span>
+            <span class="piece-idx">?</span>
+          </div>
+          <div class="pa-puzzle-piece control" draggable="true">
+            <span class="handle">⋮⋮</span>
+            <span class="piece-name">Condition — is priority High?</span>
+            <span class="piece-idx">?</span>
+          </div>
+          <div class="pa-puzzle-piece http" draggable="true">
+            <span class="handle">⋮⋮</span>
+            <span class="piece-name">Post Teams message</span>
+            <span class="piece-idx">?</span>
+          </div>
+        </div>
+        <button class="pa-sandbox-btn" onclick="checkPuzzle()">Check order</button>
+        <div class="pa-sandbox-result" id="puzzle-result" style="margin-top:14px;">Drag the pieces into the correct order and click Check.</div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+<script>
+// ================= NAV =================
+function scrollToSection(i) {
+  const el = document.getElementById('section-' + i);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-link').forEach((btn, idx) => {
+    btn.classList.toggle('active', idx === i);
+  });
+}
+
+// ================= SANDBOX 1: JSON → SCHEMA =================
+function sandboxJSON() {
+  const raw = document.getElementById('sandbox1-input').value;
+  const out = document.getElementById('sandbox1-output');
+
+  try {
+    const data = JSON.parse(raw);
+    const schema = buildSchema(data);
+    out.innerHTML = '<pre style="margin:0; white-space:pre-wrap; color:#7dd3fc;">' +
+      syntaxHighlight(JSON.stringify(schema, null, 2)) + '</pre>';
+  } catch (e) {
+    out.innerHTML = '<span style="color:#f87171;">✕ Invalid JSON: ' + e.message + '</span>';
+  }
+}
+
+function buildSchema(obj) {
+  if (obj === null) return { type: 'null' };
+  if (Array.isArray(obj)) {
+    return {
+      type: 'array',
+      items: obj.length > 0 ? buildSchema(obj[0]) : {}
+    };
+  }
+  if (typeof obj === 'object') {
+    const props = {};
+    Object.keys(obj).forEach(k => { props[k] = buildSchema(obj[k]); });
+    return { type: 'object', properties: props };
+  }
+  if (typeof obj === 'number') {
+    return { type: Number.isInteger(obj) ? 'integer' : 'number' };
+  }
+  if (typeof obj === 'boolean') return { type: 'boolean' };
+  return { type: 'string' };
+}
+
+function syntaxHighlight(json) {
+  return json
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"([^"]+)":/g, '<span style="color:#9cdcfe;">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span style="color:#ce9178;">"$1"</span>')
+    .replace(/: (true|false|null)/g, ': <span style="color:#569cd6;">$1</span>')
+    .replace(/: (\d+)/g, ': <span style="color:#b5cea8;">$1</span>');
+}
+
+// ================= SANDBOX 2: EXPRESSION TESTER =================
+function sandboxExpr() {
+  const raw = document.getElementById('sandbox2-input').value.trim();
+  const out = document.getElementById('sandbox2-output');
+
+  // Simple concat() evaluator for demo purposes
+  const concatMatch = raw.match(/^concat\((.*)\)$/);
+  if (concatMatch) {
+    const args = splitArgs(concatMatch[1]);
+    const result = args.map(a => {
+      a = a.trim();
+      if (a.startsWith("'") && a.endsWith("'")) return a.slice(1, -1);
+      return a;
+    }).join('');
+    out.innerHTML = '<span style="color:#4ade80;">✔ Result:</span><br><br>' +
+      '<code style="color:#fcd34d; font-size:14px;">' + escapeHTML(result) + '</code>';
+    return;
+  }
+
+  const upperMatch = raw.match(/^toUpper\((.*)\)$/);
+  if (upperMatch) {
+    const inner = upperMatch[1].trim().replace(/^'|'$/g, '');
+    out.innerHTML = '<span style="color:#4ade80;">✔ Result:</span><br><br>' +
+      '<code style="color:#fcd34d; font-size:14px;">' + escapeHTML(inner.toUpperCase()) + '</code>';
+    return;
+  }
+
+  const lengthMatch = raw.match(/^length\((.*)\)$/);
+  if (lengthMatch) {
+    const inner = lengthMatch[1].trim().replace(/^'|'$/g, '');
+    out.innerHTML = '<span style="color:#4ade80;">✔ Result:</span><br><br>' +
+      '<code style="color:#fcd34d; font-size:14px;">' + inner.length + '</code>';
+    return;
+  }
+
+  out.innerHTML = '<span style="color:#f87171;">Try expressions like:</span><br>' +
+    '<code style="color:#7dd3fc;">concat(\'Hello, \', \'World\')</code><br>' +
+    '<code style="color:#7dd3fc;">toUpper(\'hello\')</code><br>' +
+    '<code style="color:#7dd3fc;">length(\'Power Automate\')</code>';
+}
+
+function splitArgs(str) {
+  const args = [];
+  let cur = '';
+  let inStr = false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    if (c === "'") inStr = !inStr;
+    if (c === ',' && !inStr) { args.push(cur); cur = ''; }
+    else cur += c;
+  }
+  if (cur.trim()) args.push(cur);
+  return args;
+}
+
+function escapeHTML(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ================= SANDBOX 3: FLOW PUZZLE =================
+const correctOrder = [
+  'When a new email arrives',
+  'Parse JSON',
+  'Condition — is priority High?',
+  'Post Teams message'
+];
+
+let draggedEl = null;
+
+document.querySelectorAll('#puzzle .pa-puzzle-piece').forEach(piece => {
+  piece.addEventListener('dragstart', e => {
+    draggedEl = piece;
+    piece.classList.add('dragging');
+  });
+  piece.addEventListener('dragend', () => {
+    piece.classList.remove('dragging');
+    draggedEl = null;
+    updateIndices();
+  });
+  piece.addEventListener('dragover', e => {
+    e.preventDefault();
+  });
+  piece.addEventListener('drop', e => {
+    e.preventDefault();
+    if (draggedEl && draggedEl !== piece) {
+      const parent = piece.parentNode;
+      const children = Array.from(parent.children);
+      const draggedIdx = children.indexOf(draggedEl);
+      const targetIdx = children.indexOf(piece);
+      if (draggedIdx < targetIdx) {
+        parent.insertBefore(draggedEl, piece.nextSibling);
+      } else {
+        parent.insertBefore(draggedEl, piece);
+      }
+      updateIndices();
+    }
+  });
+});
+
+// Touch support
+let touchDragged = null;
+document.querySelectorAll('#puzzle .pa-puzzle-piece').forEach(piece => {
+  piece.addEventListener('touchstart', e => {
+    touchDragged = piece;
+    piece.classList.add('dragging');
+  }, { passive: true });
+  piece.addEventListener('touchmove', e => {
+    if (!touchDragged) return;
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && target.classList.contains('pa-puzzle-piece') && target !== touchDragged) {
+      const parent = target.parentNode;
+      const children = Array.from(parent.children);
+      const draggedIdx = children.indexOf(touchDragged);
+      const targetIdx = children.indexOf(target);
+      if (draggedIdx < targetIdx) {
+        parent.insertBefore(touchDragged, target.nextSibling);
+      } else {
+        parent.insertBefore(touchDragged, target);
+      }
+      updateIndices();
+    }
+  }, { passive: true });
+  piece.addEventListener('touchend', () => {
+    if (touchDragged) touchDragged.classList.remove('dragging');
+    touchDragged = null;
+  });
+});
+
+function updateIndices() {
+  const pieces = document.querySelectorAll('#puzzle .pa-puzzle-piece');
+  pieces.forEach((p, i) => {
+    p.querySelector('.piece-idx').textContent = i + 1;
+  });
+}
+
+function checkPuzzle() {
+  const pieces = document.querySelectorAll('#puzzle .pa-puzzle-piece');
+  const order = Array.from(pieces).map(p => p.querySelector('.piece-name').textContent.trim());
+  const correct = order.every((name, i) => name === correctOrder[i]);
+  const out = document.getElementById('puzzle-result');
+  if (correct) {
+    out.innerHTML = '<span style="color:#4ade80;">✔ Correct! The flow would run: email arrives → parse JSON → check priority → post Teams message.</span>';
+  } else {
+    out.innerHTML = '<span style="color:#f87171;">✕ Not quite. Hint: the trigger always comes first, and a Condition runs before its dependent actions.</span>';
+  }
+}
+
+updateIndices();
+sandboxJSON();
+</script>
+</body>
+</html>
