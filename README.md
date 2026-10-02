@@ -1,49 +1,42 @@
 # Power Automate Content
 
-This project contains a presentation deck on Connection References in Power Automate / Power Platform.
+A collection of standalone, browser-based presentations and lessons about Power Automate and the Power Platform. No build step or package installation is required.
 
-## Files
-- [ConnectionReference-modern.html](ConnectionReference-modern.html) — interactive slide deck
-- [ConnectionRefrence.html](ConnectionRefrence.html) — earlier/simple version of the presentation
+## Content
 
-## Presentation topic
-Connection References are a design pattern used in Power Platform to separate automation logic from the underlying connector authentication. They help with environment portability, governance, safer deployments, and ALM.
+### Power Platform Concepts and ALM
 
-## Slide overview
-1. Connection References in Power Automate
-2. Connector vs Connection vs Connection Reference
-3. Why it matters in real projects
-4. Architecture and flow of execution
-5. Real-time example: leave request approval flow
-6. Why teams and Power Platform use them
-7. Deployment and ALM process
-8. Security and governance
-9. Best practices and common mistakes
-10. Summary
+- [Connection References: modern deck](ConnectionReference-modern.html) — connectors, connections, architecture, deployment, governance, and best practices.
+- [Connection References: new version](ConnectionReferenceNew.html) and [updated version](ConnectionReferenceUpdated.html) — alternate filenames for the same presentation.
+- [Connection References: earlier deck](ConnectionRefrence.html) — an earlier overview of architecture, deployment, migration, ALM, and security.
+- [Child Flows](childflow.html) — modular flows, input and output, architecture, and common use cases. [childflows.html](childflows.html) is an identical copy.
+- [Data Loss Prevention policies](dlp.html) — connector classification, policy behavior, troubleshooting, and best practices.
+- [Environment Variables](environmentvariables.html) — variable types, setup, deployment, and common mistakes. [envvariable.html](envvariable.html) is an identical copy.
+- [Solutions](solutions.html) — managed and unmanaged solutions, environment portability, and export/import.
+- [Azure DevOps task creation](AzureDevOps.html) — an automated task-creation workflow, including SharePoint data and work-item field mapping.
 
-## How to view the deck
-Open the HTML file in a browser, or serve the folder locally:
+### Data Operations
+
+- [Compose](compose.html) — values, expressions, strings, JSON payloads, logging, date calculations, and when to use variables.
+- [Select](select.html) — reshape arrays, map or rename fields, create CSV/HTML output, and compare Select with Filter Array.
+- Filter Array lesson versions: [version 1](newtemplate.html), [version 2](newtemplate2.html), [version 3](newtemplate3.html), and [version 4](newtemplate4.html). These cover conditions, common use cases, nested data, pitfalls, and performance.
+
+### Personal
+
+- [Happy Birthday Awais](HappyBirthdayAwais.html) — a standalone birthday page.
+
+## Run Locally
+
+Open any HTML file directly in a browser, or serve the repository root:
 
 ```bash
-cd /workspaces/PowerAutomateContent
 python3 -m http.server 8000
 ```
 
-Then visit:
+Then open `http://localhost:8000/` and select a page.
 
-```text
-http://localhost:8000/ConnectionReference-modern.html
-```
+## Content Conventions
 
-## Notes for future updates
-- Add new slides here when the deck changes
-- Keep the presentation content aligned with the HTML deck
-- Add screenshots, diagrams, and business examples as needed
-- Keep language concise and presentation-friendly for a 15–20 minute talk
-
-## Speaker guidance
-Focus on these key messages:
-- Connection References decouple logic from credentials
-- They prevent deployment failures across environments
-- They support secure enterprise automation
-- They improve ALM and governance
+- Keep each presentation or lesson self-contained in its HTML file.
+- Group new README links by topic and include a concise description of the content.
+- When a file is an alternate filename or exact copy, note that relationship to make duplicate content clear.
