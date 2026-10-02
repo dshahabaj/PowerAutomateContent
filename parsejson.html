@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parse JSON — Power Automate, from zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',sans-serif; }
+
+:root {
+  --bg: #0a0612;
+  --card: #16101f;
+  --card-2: #1e1629;
+  --border: rgba(255,255,255,.08);
+  --text: #f5f3f7;
+  --text-dim: #a89bb5;
+  --accent: #a78bfa;
+  --accent-2: #22d3ee;
+  --green: #4ade80;
+  --yellow: #facc15;
+  --red: #f87171;
+  --pink: #f472b6;
+}
+
+html,
+body {
+  height: 100%;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body {
+  overflow: hidden;
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.topbar {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 28px 50px;
+
+    background:
+      linear-gradient(
+        135deg,
+        rgba(167,139,250,.15),
+        rgba(34,211,238,.10),
+        rgba(244,114,182,.08)
+      );
+
+    backdrop-filter: blur(20px);
+
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 0 0 30px 30px;
+
+    overflow: hidden;
+}
+.topbar::before {
+    content: '';
+
+    position: absolute;
+    width: 500px;
+    height: 500px;
+
+    top: -250px;
+    right: -150px;
+
+    background:
+      radial-gradient(
+        circle,
+        rgba(167,139,250,.35),
+        transparent 70%
+      );
+
+    animation: floatGlow 10s ease-in-out infinite;
+}
+
+.topbar::after {
+    content: '';
+
+    position: absolute;
+    width: 350px;
+    height: 350px;
+
+    bottom: -180px;
+    left: -80px;
+
+    background:
+      radial-gradient(
+        circle,
+        rgba(34,211,238,.20),
+        transparent 70%
+      );
+
+    animation: floatGlow2 12s ease-in-out infinite;
+}
+@keyframes floatGlow {
+
+    0%,100% {
+        transform: translate(0,0);
+    }
+
+    50% {
+        transform: translate(40px,-20px);
+    }
+}
+
+@keyframes floatGlow2 {
+
+    0%,100% {
+        transform: translate(0,0);
+    }
+
+    50% {
+        transform: translate(-30px,20px);
+    }
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
+  padding-bottom: 16px;
+  padding-left: clamp(30px, 4vw, 80px);
+  padding-right: clamp(30px, 4vw, 80px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.topbar .icon {
+
+  width: 70px;
+  height: 70px;
+
+  border-radius: 22px;
+
+  background:
+    linear-gradient(
+       135deg,
+       #a78bfa,
+       #22d3ee
+    );
+
+  box-shadow:
+      0 0 25px rgba(167,139,250,.5),
+      0 10px 40px rgba(34,211,238,.25);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 30px;
+  font-weight: 700;
+
+  color: white;
+  margin:10px;
+  position: relative;
+  z-index: 2;
+}
+.topbar .title {
+
+    font-size: 16px;
+    font-weight: 800;
+
+    background: linear-gradient(
+        90deg,
+        #ffffff,
+        #c4b5fd
+    );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.topbar .subtitle {
+
+    font-size: 24px;
+
+    color: rgba(255,255,255,.7);
+
+    margin-top: 6px;
+}
+.lesson-badge {
+
+    display: inline-flex;
+    align-items: center;
+
+    margin-top: 10px;
+
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    background:
+      rgba(34,211,238,.12);
+
+    border:
+      1px solid rgba(34,211,238,.35);
+
+    color: #67e8f9;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+.header-progress {
+
+    padding: 12px 18px;
+
+    background:
+      rgba(255,255,255,.05);
+
+    border:
+      1px solid rgba(255,255,255,.08);
+
+    border-radius: 14px;
+
+    backdrop-filter: blur(12px);
+
+    font-weight: 700;
+    font-size: 14px;
+}
+.progress-track {
+  height: 3px;
+  margin-left: clamp(30px, 4vw, 80px);
+  margin-right: clamp(30px, 4vw, 80px);
+  background: rgba(255,255,255,.05);
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.progress-track .fill {
+  height: 100%;
+  width: 4%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width .4s ease;
+}
+
+/* ---- SCROLL FIX ---- */
+
+.slides {
+  flex: 1;
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+
+  padding-bottom: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  padding-top: 40px;
+  padding-bottom: 140px;
+  padding-left: clamp(40px, 8vw, 140px);
+  padding-right: clamp(40px, 8vw, 140px);
+}
+.slides::-webkit-scrollbar { width: 6px; }
+.slides::-webkit-scrollbar-thumb { background: #4a3a55; border-radius: 6px; }
+.slide {
+  display: none;
+  animation: fadeUp .4s ease;
+
+  max-width: 1100px;
+  margin: 0 auto;
+
+  position: relative;
+  padding: 40px;
+  border-radius: 28px;
+
+  background: rgba(22,16,31,.75);
+  backdrop-filter: blur(20px);
+
+  border: 3px solid transparent;
+  overflow: hidden;
+}
+
+.slide.active {
+  display: block;
+}
+.slide::before {
+  inset: -4px;
+
+  background:
+      conic-gradient(
+        from 0deg,
+        #a78bfa,
+        #22d3ee,
+        #4ade80,
+        #facc15,
+        #f472b6,
+        #a78bfa
+      );
+
+  animation: spinBorder 6s linear infinite;
+}
+
+@keyframes spinBorder {
+  from {
+      transform: rotate(0deg);
+  }
+  to {
+      transform: rotate(360deg);
+  }
+}
+/* Animated Border */
+.slide::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+
+  background: linear-gradient(
+      90deg,
+      #a78bfa,
+      #22d3ee,
+      #4ade80,
+      #facc15,
+      #f472b6,
+      #a78bfa
+  );
+
+  background-size: 400% 400%;
+
+  border-radius: 30px;
+
+  z-index: -2;
+
+  animation: borderMove 8s linear infinite;
+}
+
+/* Inner mask */
+.slide::after {
+  content: "";
+  position: absolute;
+
+  inset: 3px;
+
+  background: linear-gradient(
+      180deg,
+      rgba(22,16,31,.98),
+      rgba(15,10,22,.98)
+  );
+
+  border-radius: 25px;
+
+  z-index: -1;
+}
+
+@keyframes borderMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 400% 50%;
+  }
+}
+.slide:hover {
+  box-shadow:
+      0 0 30px rgba(167,139,250,.25),
+      0 0 60px rgba(34,211,238,.15),
+      0 20px 80px rgba(0,0,0,.45);
+}
+.slide {
+  display: none;
+  animation: fadeUp .4s ease;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.slide.active { display: block; }
+@media (min-width: 1024px){
+
+  .slide{
+      padding: 50px;
+  }
+
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+h2 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
+h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; margin-top: 24px; color: var(--text); }
+h4 { font-size: 17px; margin-bottom: 10px; }
+p { color: var(--text-dim); font-size: 15px; line-height: 1.65; margin-bottom: 14px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.card.tint { background: var(--card-2); }
+.card-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.card-label.cyan { color: var(--accent-2); }
+.card-label.green { color: var(--green); }
+.card-label.yellow { color: var(--yellow); }
+.card-label.pink { color: var(--pink); }
+
+.pill {
+  display: inline-block;
+  background: rgba(255,255,255,.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--accent-2);
+  margin: 0 2px;
+}
+
+.code-block {
+  background: #0a0612;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.code-block .key { color: #7dd3fc; }
+.code-block .str { color: #fcd34d; }
+.code-block .num { color: #f472b6; }
+.code-block .brace { color: #a78bfa; }
+
+.recap-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+.recap-item .check { color: var(--green); font-size: 20px; flex-shrink: 0; line-height: 1.4; }
+.recap-item .body { flex: 1; }
+
+.accordion {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background .2s;
+}
+.accordion:hover { background: var(--card-2); }
+.accordion-header {
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+.accordion-header .arrow { color: var(--text-dim); transition: transform .3s; font-size: 14px; }
+.accordion.open .accordion-header .arrow { transform: rotate(180deg); }
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s, padding .3s;
+  padding: 0 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.accordion.open .accordion-body { max-height: 400px; padding: 0 20px 20px; }
+
+.anatomy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-2);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  transition: border-color .3s;
+  cursor: pointer;
+}
+.anatomy-row.active { border-color: var(--accent); }
+.anatomy-row .left { font-size: 14px; }
+.anatomy-row .dot {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  color: #0a0612;
+  flex-shrink: 0;
+}
+.anatomy-detail {
+  background: var(--card-2);
+  border-radius: 14px;
+  padding: 16px 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+.flow-mock { background: var(--card-2); border-radius: 16px; padding: 20px; margin: 16px 0; }
+.flow-action {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--accent);
+}
+.flow-action.cyan { border-left-color: var(--accent-2); }
+.flow-action.green { border-left-color: var(--green); }
+.flow-action.pink { border-left-color: var(--pink); }
+.flow-action .icon { font-size: 20px; }
+.flow-action .name { font-weight: 600; font-size: 14px; }
+.flow-action .meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+.tryit { background: var(--card); border-radius: 20px; padding: 22px; }
+.tryit select, .tryit input, .tryit textarea {
+  width: 100%;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.tryit textarea {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  min-height: 120px;
+  resize: vertical;
+}
+.btn {
+  background: var(--accent);
+  color: #0a0612;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .15s;
+  width: 100%;
+}
+.btn:hover { transform: scale(1.02); }
+
+.result-table { margin-top: 16px; font-size: 14px; }
+.result-table .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.result-table .row:last-child { border-bottom: none; }
+.result-table .row.hit { color: var(--green); font-weight: 600; }
+
+.quiz-q { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+.quiz-q .question { font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+.quiz-option {
+  background: var(--card-2);
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.quiz-option:hover { border-color: rgba(255,255,255,.15); }
+.quiz-option.correct { background: rgba(74,222,128,.15); border-color: var(--green); color: var(--green); }
+.quiz-option.wrong { background: rgba(248,113,113,.15); border-color: var(--red); color: var(--red); }
+.quiz-option.disabled { pointer-events: none; opacity: .6; }
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
+  gap: 20px;
+  margin: 16px 0;
+}
+.flip-card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 180px;
+  cursor: pointer;
+  position: relative;
+  transition: all .3s;
+  border: 1px solid var(--border);
+}
+.flip-card .front, .flip-card .back { transition: opacity .3s; }
+.flip-card .back { display: none; opacity: 0; }
+.flip-card.flipped .front { display: none; }
+.flip-card.flipped .back { display: block; opacity: 1; }
+.flip-card .card-label { color: var(--accent-2); }
+.flip-card.flipped .card-label { color: var(--accent); }
+.flip-card p { font-size: 13px; margin-bottom: 0; }
+.flip-hint { position: absolute; bottom: 12px; right: 16px; font-size: 11px; color: var(--text-dim); }
+
+.takeaway {
+  background: linear-gradient(135deg, rgba(74,222,128,.12), rgba(34,211,238,.08));
+  border-left: 4px solid var(--green);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d1fae5;
+}
+.takeaway strong { color: white; font-weight: 700; }
+
+/* ---------- BOTTOM NAV ---------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(22, 16, 31, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  z-index: 1000;
+  max-width: 700px;
+  width: calc(100% - 40px);
+  justify-content: space-between;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  /* padding-bottom:220px; */
+}
+
+.nav-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.nav-btn:hover { background: var(--card-2); }
+.nav-btn:active { transform: scale(.94); }
+.nav-btn.primary { background: var(--accent); border-color: var(--accent); color: #0a0612; font-weight: 700; }
+.nav-btn.primary:hover { background: #8b5cf6; }
+.nav-btn.active-tool {
+  background: rgba(251,191,36,.18);
+  border-color: rgba(251,191,36,.55);
+  color: #fbbf24;
+}
+
+.nav-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.nav-dots { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
+.nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #3f344d;
+  cursor: pointer;
+  transition: all .3s;
+}
+.nav-dot.active { background: var(--accent); width: 16px; border-radius: 4px; }
+
+#annotationLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  touch-action: none;
+}
+#annotationLayer.draw-active {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+@media (min-width: 1440px) {
+  .slide { max-width: 1200px; }
+  h2 { font-size: 52px; }
+  p { font-size: 18px; line-height: 1.8; }
+  .card, .tryit, .flow-mock { padding: 30px; }
+}
+@media (min-width: 1024px) {
+  h2 { font-size: 42px; }
+  p { font-size: 18px; }
+  .card { padding: 28px; }
+  .takeaway { font-size: 16px; }
+}
+@media (max-width: 480px) {
+  h2 { font-size: 22px; }
+  h3 { font-size: 16px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .nav-btn { width: 38px; height: 38px; font-size: 15px; }
+  .nav-label { font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="annotationLayer"></canvas>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex; align-items:center;">
+      <div class="icon">{ }</div>
+      <div>
+        <div class="title">Power Automate, from zero</div>
+        <div class="subtitle lesson-badge">Lesson: Parse JSON</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-track"><div class="fill" id="progressFill"></div></div>
+
+  <div class="slides" id="slidesContainer">
+
+    <!-- 01 -->
+    <div class="slide active">
+      <div class="step-label">01 — What you'll learn</div>
+      <h2>Parse JSON in Power Automate</h2>
+      <p>Parse JSON turns a raw JSON string into typed dynamic content you can actually use. Without it, working with APIs is painful.</p>
+      <div class="card tint">
+        <div class="card-label">By the end</div>
+        <p style="margin-bottom:0;">You'll know what Parse JSON does, how the schema generation works, how to handle nested data, and how to fix the errors most beginners hit.</p>
+      </div>
+      <div class="takeaway"><strong>💡 Goal:</strong> Turn any JSON response into usable dynamic fields — in one action.</div>
+    </div>
+
+    <!-- 02 -->
+    <div class="slide">
+      <div class="step-label">02 — What it is</div>
+      <h2>A translator for raw JSON</h2>
+      <p>When an HTTP action or custom connector returns data, it comes back as a raw JSON string. You can't reference individual fields from a string.</p>
+      <div class="card">
+        <div class="card-label">Before Parse JSON</div>
+        <p style="margin-bottom:0;">A big blob of text — <span class="pill">{ "id": 1, "name": "Alice" }</span></p>
+      </div>
+      <div class="card">
+        <div class="card-label cyan">After Parse JSON</div>
+        <p style="margin-bottom:0;">Every field is now a dynamic content chip — <span class="pill">id</span> <span class="pill">name</span></p>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Parse JSON doesn't change the data. It tells Power Automate the shape.</div>
+    </div>
+
+    <!-- 03 -->
+    <div class="slide">
+      <div class="step-label">03 — Simple example</div>
+      <h2>From raw text to fields</h2>
+      <div class="code-block">
+        <span class="brace">{</span><br>
+        &nbsp;&nbsp;<span class="key">"id"</span>: <span class="num">1</span>,<br>
+        &nbsp;&nbsp;<span class="key">"name"</span>: <span class="str">"Alice"</span>,<br>
+        &nbsp;&nbsp;<span class="key">"email"</span>: <span class="str">"alice@example.com"</span><br>
+        <span class="brace">}</span>
+      </div>
+      <p>After Parse JSON, you can drag <span class="pill">id</span>, <span class="pill">name</span>, and <span class="pill">email</span> into any downstream action.</p>
+      <div class="takeaway"><strong>💡</strong> One action unlocks every field in the response.</div>
+    </div>
+
+    <!-- 04 -->
+    <div class="slide">
+      <div class="step-label">04 — Why it matters</div>
+      <h2>APIs without Parse JSON are unusable</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+        <li>You can't reference individual fields</li>
+        <li>You can't filter, loop, or transform the data</li>
+        <li>You can't send it to Excel, SharePoint, or Teams</li>
+        <li>You can't debug what's actually inside</li>
+      </ul>
+      <div class="takeaway"><strong>💡</strong> Parse JSON is the bridge between raw data and usable data.</div>
+    </div>
+
+    <!-- 05 -->
+    <div class="slide">
+      <div class="step-label">05 — Anatomy</div>
+      <h2>The anatomy of Parse JSON</h2>
+      <p>Tap a numbered dot to see what each part does.</p>
+
+      <div class="anatomy-row" data-anatomy="1"><div class="left">📥 Content: the raw JSON from HTTP or connector</div><div class="dot">1</div></div>
+      <div class="anatomy-row" data-anatomy="2"><div class="left">🧬 Schema: the shape definition (JSON schema)</div><div class="dot">2</div></div>
+      <div class="anatomy-row" data-anatomy="3"><div class="left">📤 Outputs: typed dynamic content chips</div><div class="dot">3</div></div>
+      <div class="anatomy-row" data-anatomy="4"><div class="left">🔗 Downstream: use fields in any action below</div><div class="dot">4</div></div>
+
+      <div class="anatomy-detail" id="anatomyDetail">Tap a numbered dot above.</div>
+      <div class="takeaway"><strong>💡</strong> The Content field is what you're parsing. The Schema is how.</div>
+    </div>
+
+    <!-- 06 -->
+    <div class="slide">
+      <div class="step-label">06 — Schema basics</div>
+      <h2>What is a JSON schema?</h2>
+      <p>A schema describes the structure of your JSON: which fields exist, what type each one is, and whether they're required.</p>
+      <div class="code-block">
+        <span class="brace">{</span><br>
+        &nbsp;&nbsp;<span class="key">"type"</span>: <span class="str">"object"</span>,<br>
+        &nbsp;&nbsp;<span class="key">"properties"</span>: <span class="brace">{</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"id"</span>: <span class="brace">{</span> <span class="key">"type"</span>: <span class="str">"integer"</span> <span class="brace">}</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"name"</span>: <span class="brace">{</span> <span class="key">"type"</span>: <span class="str">"string"</span> <span class="brace">}</span><br>
+        &nbsp;&nbsp;<span class="brace">}</span><br>
+        <span class="brace">}</span>
+      </div>
+      <div class="takeaway"><strong>💡</strong> You don't write the schema by hand. Power Automate generates it.</div>
+    </div>
+
+    <!-- 07 -->
+    <div class="slide">
+      <div class="step-label">07 — Generate from sample</div>
+      <h2>The magic button</h2>
+      <p>Inside Parse JSON, click <strong>Generate from sample</strong>, paste an example JSON, and Power Automate builds the schema for you.</p>
+      <div class="card">
+        <div class="card-label">Step 1</div>
+        <p style="margin-bottom:0;">Add Parse JSON action</p>
+      </div>
+      <div class="card">
+        <div class="card-label cyan">Step 2</div>
+        <p style="margin-bottom:0;">Paste a sample JSON response</p>
+      </div>
+      <div class="card">
+        <div class="card-label green">Step 3</div>
+        <p style="margin-bottom:0;">Click Generate → schema appears</p>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Use a real example from your API — not something made up.</div>
+    </div>
+
+    <!-- 08 -->
+    <div class="slide">
+      <div class="step-label">08 — In the designer</div>
+      <h2>Real flow, real steps</h2>
+      <div class="flow-mock">
+        <div class="flow-action cyan"><div class="icon">🌐</div><div><div class="name">HTTP — GET weather API</div><div class="meta">Returns raw JSON</div></div></div>
+        <div class="flow-action"><div class="icon">{ }</div><div><div class="name">Parse JSON</div><div class="meta">Schema generated from sample</div></div></div>
+        <div class="flow-action green"><div class="icon">📊</div><div><div class="name">Create item — SharePoint</div><div class="meta">Uses parsed fields</div></div></div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Parse JSON always sits between a raw response and its consumer.</div>
+    </div>
+
+    <!-- 09 -->
+    <div class="slide">
+      <div class="step-label">09 — Nested JSON</div>
+      <h2>When objects have objects</h2>
+      <p>Real APIs return nested structures. Parse JSON handles them — you just need the right sample.</p>
+      <div class="code-block">
+        <span class="brace">{</span><br>
+        &nbsp;&nbsp;<span class="key">"user"</span>: <span class="brace">{</span> <span class="key">"name"</span>: <span class="str">"Alice"</span> <span class="brace">}</span>,<br>
+        &nbsp;&nbsp;<span class="key">"address"</span>: <span class="brace">{</span> <span class="key">"city"</span>: <span class="str">"Mumbai"</span> <span class="brace">}</span><br>
+        <span class="brace">}</span>
+      </div>
+      <p>Downstream, access with <span class="pill">body('Parse_JSON')?['user']?['name']</span>.</p>
+      <div class="takeaway"><strong>💡</strong> Nested objects use the <span class="pill">?['key']</span> pattern repeatedly.</div>
+    </div>
+
+    <!-- 10 -->
+    <div class="slide">
+      <div class="step-label">10 — Arrays in JSON</div>
+      <h2>When JSON has a list</h2>
+      <p>If the response is an array of objects, the schema type is <span class="pill">array</span> and the top-level field is <span class="pill">body</span>.</p>
+      <div class="takeaway"><strong>💡</strong> Arrays go through Apply to Each. Objects go through direct field access.</div>
+    </div>
+
+    <!-- 11 -->
+    <div class="slide">
+      <div class="step-label">11 — Real API response</div>
+      <h2>Weather API example</h2>
+      <div class="code-block">
+        <span class="brace">{</span><br>
+        &nbsp;&nbsp;<span class="key">"location"</span>: <span class="str">"Mumbai"</span>,<br>
+        &nbsp;&nbsp;<span class="key">"temperature"</span>: <span class="num">32</span>,<br>
+        &nbsp;&nbsp;<span class="key">"humidity"</span>: <span class="num">78</span>,<br>
+        &nbsp;&nbsp;<span class="key">"condition"</span>: <span class="str">"Sunny"</span><br>
+        <span class="brace">}</span>
+      </div>
+      <p>After Parse JSON, use any field in an email, Teams message, or SharePoint item.</p>
+      <div class="takeaway"><strong>💡</strong> Real example beats synthetic every time.</div>
+    </div>
+
+    <!-- 12 -->
+    <div class="slide">
+      <div class="step-label">12 — Use case: HTTP</div>
+      <h2>Parse JSON after HTTP</h2>
+      <p>The #1 use case. Every HTTP GET or POST that returns JSON should have Parse JSON right after it.</p>
+      <div class="takeaway"><strong>💡</strong> Rule: if the response is JSON, parse it immediately.</div>
+    </div>
+
+    <!-- 13 -->
+    <div class="slide">
+      <div class="step-label">13 — Use case: custom connectors</div>
+      <h2>Parse custom connector output</h2>
+      <p>Custom connectors often return raw JSON you need to parse before use.</p>
+      <div class="takeaway"><strong>💡</strong> Even premium connectors sometimes need parsing.</div>
+    </div>
+
+    <!-- 14 -->
+    <div class="slide">
+      <div class="step-label">14 — Use case: webhooks</div>
+      <h2>Parse webhook payloads</h2>
+      <p>Webhooks send JSON. Parse it before triggering downstream logic.</p>
+      <div class="takeaway"><strong>💡</strong> Webhooks are the second-biggest source of JSON in Power Automate.</div>
+    </div>
+
+    <!-- 15 -->
+    <div class="slide">
+      <div class="step-label">15 — Use case: Dataverse</div>
+      <h2>Parse Dataverse responses</h2>
+      <p>Custom Dataverse calls return JSON. Parse before you loop or filter.</p>
+      <div class="takeaway"><strong>💡</strong> If it looks like <span class="pill">{ }</span>, parse it.</div>
+    </div>
+
+    <!-- 16 -->
+    <div class="slide">
+      <div class="step-label">16 — Compare</div>
+      <h2>Parse JSON vs Compose</h2>
+      <div class="compare-grid">
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front"><div class="card-label">Reads the shape</div><p>Understands JSON structure. Exposes typed fields.</p></div>
+          <div class="back"><div class="card-label">Parse JSON</div><h4>Interprets</h4><p>Needs a schema. Great for API responses.</p></div>
+          <div class="flip-hint">Tap →</div>
+        </div>
+        <div class="flip-card" onclick="this.classList.toggle('flipped')">
+          <div class="front"><div class="card-label" style="color:var(--pink);">Holds a value</div><p>Static. Doesn't interpret structure.</p></div>
+          <div class="back"><div class="card-label" style="color:var(--pink);">Compose</div><h4>Stores</h4><p>Perfect for building JSON, not reading it.</p></div>
+          <div class="flip-hint">Tap →</div>
+        </div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Compose writes JSON. Parse JSON reads it.</div>
+    </div>
+
+    <!-- 17 -->
+    <div class="slide">
+      <div class="step-label">17 — Try it</div>
+      <h2>Parse a sample JSON</h2>
+      <p>Click below to see how raw JSON becomes typed fields.</p>
+      <div class="tryit">
+        <label style="font-size:13px; color:var(--text-dim);">Sample JSON</label>
+        <textarea id="jsonSample">{
+  "id": 101,
+  "name": "Shahabaj",
+  "email": "shahabaj@example.com",
+  "role": "Developer"
+}</textarea>
+        <button class="btn" onclick="parseSample()">▶ Parse JSON</button>
+        <div class="result-table" id="parseResult"></div>
+        <p id="parseMsg" style="margin-top:14px; font-size:13px; color:var(--text-dim);">Press Parse to see the extracted fields.</p>
+      </div>
+    </div>
+
+    <!-- 18 -->
+    <div class="slide">
+      <div class="step-label">18 — Practice</div>
+      <h2>Write the expression</h2>
+      <p>How do you access the <span class="pill">name</span> field after parsing?</p>
+      <div class="card"><div class="card-label">Answer</div><p style="margin-bottom:0;"><span class="pill">body('Parse_JSON')?['name']</span></p></div>
+      <div class="takeaway"><strong>💡</strong> Not <span class="pill">outputs()</span>. Not <span class="pill">triggerBody()</span>. It's <span class="pill">body()</span>.</div>
+    </div>
+
+    <!-- 19 -->
+    <div class="slide">
+      <div class="step-label">19 — Practice</div>
+      <h2>Access a nested field</h2>
+      <p>How do you access <span class="pill">city</span> inside <span class="pill">address</span>?</p>
+      <div class="card"><div class="card-label">Answer</div><p style="margin-bottom:0;"><span class="pill">body('Parse_JSON')?['address']?['city']</span></p></div>
+      <div class="takeaway"><strong>💡</strong> Chain the <span class="pill">?['key']</span> pattern for each level.</div>
+    </div>
+
+    <!-- 20 -->
+    <div class="slide">
+      <div class="step-label">20 — Pitfalls</div>
+      <h2>Common mistakes</h2>
+      <p>Tap a mistake to see why it trips beginners up.</p>
+
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Using dynamic content as the sample</span><span class="arrow">▼</span></div><div class="accordion-body">When you click Generate from sample, paste a <strong>static</strong> JSON example. If you paste dynamic content, the schema won't be built.</div></div>
+
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Providing an incomplete sample</span><span class="arrow">▼</span></div><div class="accordion-body">If your sample only has 2 fields but the real response has 5, only 2 will be available downstream. Always use a full, real response.</div></div>
+
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Wrong schema type (object vs array)</span><span class="arrow">▼</span></div><div class="accordion-body">If the response is <span class="pill">[{ ... }]</span>, the type is <strong>array</strong>. If it's <span class="pill">{ ... }</span>, it's <strong>object</strong>. The wrong type breaks downstream.</div></div>
+
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Forgetting to handle empty responses</span><span class="arrow">▼</span></div><div class="accordion-body">If the API returns nothing, Parse JSON fails. Check for empty content first using <span class="pill">empty()</span> or a Condition.</div></div>
+
+      <div class="accordion" onclick="toggleAcc(this)"><div class="accordion-header"><span>Using outputs() instead of body()</span><span class="arrow">▼</span></div><div class="accordion-body">Parse JSON outputs live in <span class="pill">body('Parse_JSON')</span> — not <span class="pill">outputs()</span>. That's the pattern.</div></div>
+    </div>
+
+    <!-- 21 -->
+    <div class="slide">
+      <div class="step-label">21 — Best practices</div>
+      <h2>Write clean Parse JSON actions</h2>
+      <ul style="padding-left:20px; color:var(--text-dim); line-height:1.9; font-size:15px;">
+        <li>Always rename the action — <span class="pill">Parse_Weather</span>, not <span class="pill">Parse_JSON</span></li>
+        <li>Generate the schema from a real, complete response</li>
+        <li>Store the sample in a comment or documentation</li>
+        <li>Test with empty or malformed responses</li>
+        <li>Use <span class="pill">?['key']</span> for optional fields</li>
+      </ul>
+      <div class="takeaway"><strong>💡</strong> Named actions = easier flows to debug later.</div>
+    </div>
+
+    <!-- 22 -->
+    <div class="slide">
+      <div class="step-label">22 — Advanced</div>
+      <h2>Handle optional fields</h2>
+      <p>Some APIs return fields only when present. Use <span class="pill">coalesce()</span> to provide a fallback value.</p>
+      <div class="card"><div class="card-label">Example</div><p style="margin-bottom:0;"><span class="pill">coalesce(body('Parse_JSON')?['phone'], 'Not provided')</span></p></div>
+      <div class="takeaway"><strong>💡</strong> Guard against missing fields before your flow breaks.</div>
+    </div>
+
+    <!-- 23 -->
+    <div class="slide">
+      <div class="step-label">23 — Performance</div>
+      <h2>Why it's fast</h2>
+      <p>Parse JSON is a single-pass operation. It reads the schema once and exposes all fields at once.</p>
+      <div class="takeaway"><strong>💡</strong> No looping required to read the structure.</div>
+    </div>
+
+    <!-- 24 -->
+    <div class="slide">
+      <div class="step-label">24 — Real scenario</div>
+      <h2>API → Teams notification</h2>
+      <div class="flow-mock">
+        <div class="flow-action cyan"><div class="icon">🌐</div><div><div class="name">HTTP — GET ticket API</div><div class="meta">Raw JSON response</div></div></div>
+        <div class="flow-action"><div class="icon">{ }</div><div><div class="name">Parse JSON</div><div class="meta">Schema from ticket sample</div></div></div>
+        <div class="flow-action green"><div class="icon">💬</div><div><div class="name">Post Teams message</div><div class="meta">Ticket ID, title, priority</div></div></div>
+      </div>
+      <div class="takeaway"><strong>💡</strong> Real-world pattern — API to Teams, in 3 actions.</div>
+    </div>
+
+    <!-- 25 -->
+    <div class="slide">
+      <div class="step-label">25 — Quiz</div>
+      <h2>Does it stick?</h2>
+      <p>Three quick questions. Pick an answer to see if you're right.</p>
+
+      <div class="quiz-q">
+        <div class="question">1. What does Parse JSON do?</div>
+        <div class="quiz-option" onclick="answer(this, false)">Converts a string to a number</div>
+        <div class="quiz-option" onclick="answer(this, true)">Turns raw JSON into typed dynamic content</div>
+        <div class="quiz-option" onclick="answer(this, false)">Sends data to an API</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">2. How do you reference a parsed field?</div>
+        <div class="quiz-option" onclick="answer(this, false)">outputs('Parse_JSON')?['name']</div>
+        <div class="quiz-option" onclick="answer(this, true)">body('Parse_JSON')?['name']</div>
+        <div class="quiz-option" onclick="answer(this, false)">triggerBody()?['name']</div>
+      </div>
+
+      <div class="quiz-q">
+        <div class="question">3. What sample should you paste into Generate from sample?</div>
+        <div class="quiz-option" onclick="answer(this, false)">A made-up example</div>
+        <div class="quiz-option" onclick="answer(this, true)">A real, complete response from the API</div>
+        <div class="quiz-option" onclick="answer(this, false)">Any JSON from the internet</div>
+      </div>
+    </div>
+
+    <!-- 26 (Recap) -->
+    <div class="slide">
+      <div class="step-label">Recap</div>
+      <h2>What you now know</h2>
+      <div class="card tint">
+        <div class="recap-item"><div class="check">✔</div><div class="body"><strong>Parse JSON</strong> turns raw JSON strings into typed dynamic content.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">It needs a <strong>Content</strong> (the raw JSON) and a <strong>Schema</strong> (the shape).</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Use <strong>Generate from sample</strong> with a real, complete JSON response.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">Access fields with <span class="pill">body('Parse_JSON')?['key']</span>.</div></div>
+        <div class="recap-item"><div class="check">✔</div><div class="body">For arrays: use Apply to Each. For objects: access fields directly.</div></div>
+        <div class="recap-item" style="margin-bottom:0;"><div class="check">✔</div><div class="body">Compose writes JSON. Parse JSON reads it.</div></div>
+      </div>
+      <div class="takeaway"><strong>Next lesson:</strong> Child Flows — how to break a giant flow into modular pieces.</div>
+    </div>
+
+  </div>
+
+  <!-- ---------- BOTTOM NAV ---------- -->
+  <div class="bottom-nav">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous">←</button>
+    <button class="nav-btn" id="clearBtn" aria-label="Clear drawing" title="Clear">🧹</button>
+    <button class="nav-btn" id="pencilBtn" aria-label="Toggle pencil" title="Pencil">✏️</button>
+
+    <div class="nav-center">
+      <div class="nav-label" id="navLabel">Intro</div>
+      <div class="nav-dots" id="navDots"></div>
+    </div>
+
+    <button class="nav-btn" id="fullscreenBtn" aria-label="Fullscreen" title="Fullscreen">⛶</button>
+    <button class="nav-btn primary" id="nextBtn" aria-label="Next">→</button>
+  </div>
+</div>
+
+<script>
+// ---------------- SLIDES ----------------
+const slides = document.querySelectorAll('.slide');
+const navDots = document.getElementById('navDots');
+const navLabel = document.getElementById('navLabel');
+const progressFill = document.getElementById('progressFill');
+const slidesContainer = document.getElementById('slidesContainer');
+slidesContainer.style.touchAction = "pan-y";
+const stepLabels = [
+  'Intro','Concept','Example','Why','Anatomy',
+  'Schema','Generate','Designer','Nested','Arrays',
+  'Weather','HTTP','Custom','Webhooks','Dataverse',
+  'Compare','Try it','Practice 1','Practice 2','Pitfalls',
+  'Best practice','Advanced','Performance','Scenario','Quiz','Recap'
+];
+let current = 0;
+let dprScale = 1;
+const slideAnnotations = {};
+
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'nav-dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => showSlide(i);
+  navDots.appendChild(d);
+});
+
+function showSlide(i) {
+  if (current >= 0 && canvas.width > 0) {
+    slideAnnotations[current] = canvas.toDataURL();
+  }
+
+  isDrawMode = false;
+  isDrawing = false;
+  canvas.classList.remove('draw-active');
+  pencilBtn.classList.remove('active-tool');
+
+  slides[current].classList.remove('active');
+  navDots.children[current].classList.remove('active');
+
+  current = Math.max(0, Math.min(i, slides.length - 1));
+
+  slides[current].classList.add('active');
+  navDots.children[current].classList.add('active');
+
+  navLabel.textContent = stepLabels[current] || '';
+  progressFill.style.width = `${((current + 1) / slides.length) * 100}%`;
+  slidesContainer.scrollTop = 0;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale);
+    };
+    img.src = slideAnnotations[current];
+  }
+}
+
+function bindNav(btn, delta) {
+  let touched = false;
+  btn.addEventListener('touchstart', (e) => {
+    touched = true;
+    e.preventDefault();
+    showSlide(current + delta);
+  }, { passive: false });
+  btn.addEventListener('click', () => {
+    if (touched) { touched = false; return; }
+    showSlide(current + delta);
+  });
+}
+bindNav(document.getElementById('nextBtn'), 1);
+bindNav(document.getElementById('prevBtn'), -1);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') showSlide(current + 1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') showSlide(current - 1);
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+});
+
+// Swipe nav
+let touchStartX = 0;
+let touchStartY = 0;
+slidesContainer.addEventListener('touchstart', (e) => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+slidesContainer.addEventListener('touchend', (e) => {
+  if (isDrawMode) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (dx < 0) showSlide(current + 1);
+    else showSlide(current - 1);
+  }
+}, { passive: true });
+
+// ---------------- ACCORDION ----------------
+function toggleAcc(el) { el.classList.toggle('open'); }
+
+// ---------------- ANATOMY ----------------
+const anatomyData = {
+  1: '<strong>📥 Content:</strong> The raw JSON — usually <span class="pill">body(\'HTTP\')</span> from the previous action.',
+  2: '<strong>🧬 Schema:</strong> The shape definition. Power Automate generates it from a sample.',
+  3: '<strong>📤 Outputs:</strong> Typed dynamic content chips — one per field in the schema.',
+  4: '<strong>🔗 Downstream:</strong> Use the fields in any action below with <span class="pill">body(\'Parse_JSON\')?[\'key\']</span>.'
+};
+document.querySelectorAll('.anatomy-row').forEach(row => {
+  row.addEventListener('click', () => {
+    document.querySelectorAll('.anatomy-row').forEach(r => r.classList.remove('active'));
+    row.classList.add('active');
+    document.getElementById('anatomyDetail').innerHTML = anatomyData[row.dataset.anatomy];
+  });
+});
+
+// ---------------- TRY IT (Parse Sandbox) ----------------
+function parseSample() {
+  const raw = document.getElementById('jsonSample').value;
+  const out = document.getElementById('parseResult');
+  const msg = document.getElementById('parseMsg');
+  out.innerHTML = '';
+  try {
+    const obj = JSON.parse(raw);
+    Object.keys(obj).forEach(k => {
+      const row = document.createElement('div');
+      row.className = 'row hit';
+      row.innerHTML = `<span>${k}</span><span>${obj[k]}</span>`;
+      out.appendChild(row);
+    });
+    msg.innerHTML = `Parsed successfully. ${Object.keys(obj).length} fields available as dynamic content.`;
+  } catch (err) {
+    out.innerHTML = `<div class="row" style="color:var(--red);">Invalid JSON — ${err.message}</div>`;
+    msg.innerHTML = `Fix the JSON above and try again.`;
+  }
+}
+
+// ---------------- QUIZ ----------------
+function answer(el, correct) {
+  const parent = el.parentElement;
+  if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  parent.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+  if (!correct) {
+    parent.querySelectorAll('.quiz-option').forEach(o => {
+      if (o.getAttribute('onclick').includes('true')) o.classList.add('correct');
+    });
+  }
+}
+
+// ---------------- PENCIL + FULLSCREEN ----------------
+const canvas = document.getElementById('annotationLayer');
+const ctx = canvas.getContext('2d');
+const pencilBtn = document.getElementById('pencilBtn');
+const clearBtn = document.getElementById('clearBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+let isDrawMode = false, isDrawing = false, lastX = 0, lastY = 0;
+
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  dprScale = dpr;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(dpr, dpr);
+}
+resizeCanvas();
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  if (slideAnnotations[current]) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width / dprScale, canvas.height / dprScale);
+    };
+    img.src = slideAnnotations[current];
+  }
+});
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+canvas.addEventListener('pointerdown', e => {
+  if (!isDrawMode) return;
+  isDrawing = true;
+  lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener('pointermove', e => {
+  if (!isDrawing || !isDrawMode) return;
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#fbbf24';
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(e.clientX, e.clientY); ctx.stroke();
+  lastX = e.clientX; lastY = e.clientY;
+});
+['pointerup','pointerleave','pointercancel'].forEach(evt =>
+  canvas.addEventListener(evt, () => isDrawing = false)
+);
+
+pencilBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  isDrawMode = !isDrawMode;
+  if (isDrawMode) {
+    canvas.classList.add('draw-active');
+    pencilBtn.classList.add('active-tool');
+  } else {
+    canvas.classList.remove('draw-active');
+    pencilBtn.classList.remove('active-tool');
+    isDrawing = false;
+  }
+});
+
+clearBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (slideAnnotations[current]) delete slideAnnotations[current];
+  isDrawMode = false;
+  isDrawing = false;
+  canvas.classList.remove('draw-active');
+  pencilBtn.classList.remove('active-tool');
+});
+
+function toggleFullscreen() {
+  const el = document.documentElement;
+  const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+  if (!isFull) {
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+fullscreenBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleFullscreen();
+});
+
+// ---------------- INIT ----------------
+showSlide(0);
+</script>
+</body>
+</html>
